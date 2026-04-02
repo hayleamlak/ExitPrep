@@ -1,0 +1,35 @@
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Space+Grotesk:wght@400;500;700&display=swap");
+@import "tailwindcss";
+
+:root {
+  font-family: "Space Grotesk", "Segoe UI", sans-serif;
+  color: #e2e8f0;
+  background-color: #090c17;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background-color: #090c17;
+  transition: background-color 220ms ease;
+}
+
+:root[data-theme="light"] body {
+  background-color: #eef2f7;
+}
+
+.font-mono {
+  font-family: "IBM Plex Mono", monospace;
+}

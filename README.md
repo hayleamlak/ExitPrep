@@ -27,6 +27,30 @@ This workspace now contains a full implementation of the ExitPrep+ web platform 
    - `npm install`
    - `npm run dev`
 
+## Deployment (Recommended: Render Free)
+Render is the best free option for this project because it supports both a Node API and static frontend hosting from one repo.
+
+1. Push this repository to GitHub.
+2. In Render, click `New +` -> `Blueprint`.
+3. Connect your GitHub repo and select this project.
+4. Render will read [render.yaml](render.yaml) and create:
+   - `exitprep-api` (Node web service)
+   - `exitprep-web` (static frontend)
+5. Set required environment variables for `exitprep-api`:
+   - `MONGODB_URI`
+   - `JWT_SECRET`
+   - `HUGGING_FACE_API_KEY`
+   - `CLOUDINARY_CLOUD_NAME`
+   - `CLOUDINARY_API_KEY`
+   - `CLOUDINARY_API_SECRET`
+6. After the API deploys, set `VITE_API_URL` for `exitprep-web` to:
+   - `https://<your-api-service>.onrender.com/api`
+7. Redeploy the static site once after setting `VITE_API_URL`.
+
+Notes:
+- Free web services on Render can sleep after inactivity.
+- `client/.env` and `server/.env` are local-only; production uses Render env vars.
+
 ## API Endpoints
 - `POST /api/auth/register`
 - `POST /api/auth/login`

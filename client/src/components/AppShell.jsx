@@ -4,17 +4,17 @@ import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 
 const studentItems = [
-  { to: "/study-notes", label: "Notes", icon: BookOpen },
-  { to: "/practice-questions", label: "Questions", icon: LayoutGrid },
-  { to: "/dashboard", label: "Insights", icon: BarChart3 }
+  { to: "/app/study-notes", label: "Notes", icon: BookOpen },
+  { to: "/app/practice-questions", label: "Questions", icon: LayoutGrid },
+  { to: "/app/dashboard", label: "Insights", icon: BarChart3 }
 ];
 
-const adminItems = [{ to: "/admin", label: "Admin Panel", icon: ShieldCheck }];
+const adminItems = [{ to: "/app/admin", label: "Admin Panel", icon: ShieldCheck }];
 
 const guidanceItems = [
-  { to: "/profile", label: "Profile", icon: UserRound },
-  { to: "/dashboard", label: "Insights", icon: Rocket },
-  { to: "/dashboard", label: "Guide", icon: CircleHelp }
+  { to: "/app/profile", label: "Profile", icon: UserRound },
+  { to: "/app/dashboard", label: "Insights", icon: Rocket },
+  { to: "/app/dashboard", label: "Guide", icon: CircleHelp }
 ];
 
 function NavSection({ title, items, isDark }) {

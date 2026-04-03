@@ -1,5 +1,13 @@
 const Resource = require("../models/Resource");
 
+function isPdfResource(fileUrl) {
+  if (typeof fileUrl !== "string" || fileUrl.trim() === "") {
+    return false;
+  }
+
+  return /\.pdf(?:$|[?#])/i.test(fileUrl);
+}
+
 async function listResources(req, res) {
   try {
     const query = {};
@@ -11,8 +19,15 @@ async function listResources(req, res) {
       query.department = req.query.department;
     }
 
-    const resources = await Resource.find(query).sort({ createdAt: -1 });
-    return res.json(resources);
+    const resources = await Resource.find(query)
+      .populate("uploadedBy", "role")
+      .sort({ createdAt: -1 });
+
+    const adminUploadedPdfResources = resources.filter(
+      (resource) => resource.uploadedBy?.role === "admin" && isPdfResource(resource.fileUrl)
+    );
+
+    return res.json(adminUploadedPdfResources);
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }

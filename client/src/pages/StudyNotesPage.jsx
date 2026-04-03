@@ -1,116 +1,10 @@
 import { useEffect, useState } from "react";
-import { Download, ExternalLink, FileText, Search, Star } from "lucide-react";
+import { Download, ExternalLink, FileText, Search } from "lucide-react";
 import api from "../services/api";
-
-const fallbackTopics = [
-  {
-    id: "t1",
-    title: "Automata and Complexity Theory",
-    description: "Finite automata, formal languages, and computational complexity.",
-    completed: 0,
-    total: 0
-  },
-  {
-    id: "t2",
-    title: "Compiler Design",
-    description: "Lexical analysis, parsing, semantic analysis, and code generation.",
-    completed: 0,
-    total: 0
-  },
-  {
-    id: "t3",
-    title: "Computer and Network Security",
-    description: "Security principles, cryptography basics, and network protection.",
-    completed: 4,
-    total: 7
-  },
-  {
-    id: "t4",
-    title: "Computer Organization and Architecture",
-    description: "CPU design, memory hierarchy, instruction sets, and hardware basics.",
-    completed: 0,
-    total: 0
-  },
-  {
-    id: "t5",
-    title: "Data Communication and Networking",
-    description: "Networking fundamentals, protocols, OSI model, and data transmission.",
-    completed: 0,
-    total: 6
-  },
-  {
-    id: "t6",
-    title: "Data Structure & Algorithm",
-    description: "Efficient data structures, algorithms, and performance analysis.",
-    completed: 1,
-    total: 8
-  },
-  {
-    id: "t7",
-    title: "Database Management Systems",
-    description: "Fundamental and advanced database concepts including SQL, normalization, and distributed systems.",
-    completed: 0,
-    total: 9
-  },
-  {
-    id: "t8",
-    title: "Internet Programming",
-    description: "Web development fundamentals including HTML, CSS, JavaScript, and basic web architectures.",
-    completed: 4,
-    total: 7
-  },
-  {
-    id: "t9",
-    title: "Introduction to Algorithms",
-    description: "Algorithm design techniques and basic time-space complexity analysis.",
-    completed: 0,
-    total: 6
-  },
-  {
-    id: "t10",
-    title: "Introduction to Artificial Intelligence",
-    description: "Search techniques, basic machine learning, and intelligent agents.",
-    completed: 0,
-    total: 8
-  },
-  {
-    id: "t11",
-    title: "Network and System Administration",
-    description: "System setup, user management, monitoring, and maintenance.",
-    completed: 0,
-    total: 5
-  },
-  {
-    id: "t12",
-    title: "Object Oriented Programming",
-    description: "Advanced OOP concepts, Java, Inheritance, Polymorphism, and Threads.",
-    completed: 0,
-    total: 5
-  },
-  {
-    id: "t13",
-    title: "Operating System",
-    description: "Processes, memory management, file systems, and concurrency.",
-    completed: 0,
-    total: 5
-  },
-  {
-    id: "t14",
-    title: "Programming Fundamentals",
-    description: "Basic programming concepts, C++, OOP (C++), and file handling.",
-    completed: 0,
-    total: 9
-  },
-  {
-    id: "t15",
-    title: "Software Engineering",
-    description: "Software development life cycle, design, testing, and maintenance.",
-    completed: 2,
-    total: 6
-  }
-];
+import { useTheme } from "../context/ThemeContext";
 
 function StudyNotesPage() {
+  const { isDark } = useTheme();
   const [resources, setResources] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -131,19 +25,14 @@ function StudyNotesPage() {
     fetchResources();
   }, []);
 
-  const mappedTopics =
-    resources.length > 0
-      ? resources.map((resource) => ({
-          id: resource._id,
-          title: resource.title,
-          year: resource.year,
-          description: `${resource.course} | ${resource.department} | Year ${resource.year}`,
-          fileUrl: resource.fileUrl,
-          rating: typeof resource.rating === "number" ? resource.rating : 4.6,
-          downloads: typeof resource.downloads === "number" ? resource.downloads : 0,
-          isUploaded: true
-        }))
-      : fallbackTopics;
+  const mappedTopics = resources.map((resource) => ({
+    id: resource._id,
+    title: resource.title,
+    year: resource.year,
+    description: `${resource.course} | ${resource.department} | Year ${resource.year}`,
+    fileUrl: resource.fileUrl,
+    downloads: typeof resource.downloads === "number" ? resource.downloads : 0
+  }));
 
   const filteredTopics = mappedTopics.filter(
     (topic) =>
@@ -157,7 +46,7 @@ function StudyNotesPage() {
   };
 
   const startDownload = async (topic) => {
-    if (!topic.fileUrl || !topic.isUploaded) {
+    if (!topic.fileUrl) {
       return;
     }
 
@@ -188,13 +77,47 @@ function StudyNotesPage() {
     }
   };
 
+  const palette = isDark
+    ? {
+        title: "text-white",
+        description: "text-slate-400",
+        divider: "border-white/10",
+        searchInput:
+          "border-white/10 bg-white/5 text-slate-200 placeholder:text-slate-500 focus:border-white/25",
+        listWrap: "border-white/10 bg-[#0d1326]",
+        rowDivider: "border-white/10",
+        noteTitle: "text-slate-50",
+        noteMeta: "text-slate-400",
+        chip: "border-cyan-400/25 bg-cyan-400/10 text-cyan-200",
+        downloadCount: "text-slate-300",
+        openButton: "border-white/10 bg-white/5 text-slate-200 hover:bg-white/10",
+        downloadButton: "bg-blue-500 text-white hover:bg-blue-400",
+        emptyText: "text-slate-500"
+      }
+    : {
+        title: "text-slate-900",
+        description: "text-slate-600",
+        divider: "border-slate-200",
+        searchInput:
+          "border-slate-300 bg-white text-slate-800 placeholder:text-slate-400 focus:border-slate-500",
+        listWrap: "border-slate-200 bg-white",
+        rowDivider: "border-slate-200",
+        noteTitle: "text-slate-900",
+        noteMeta: "text-slate-500",
+        chip: "border-cyan-300 bg-cyan-50 text-cyan-700",
+        downloadCount: "text-slate-700",
+        openButton: "border-slate-300 bg-white text-slate-700 hover:bg-slate-100",
+        downloadButton: "bg-blue-600 text-white hover:bg-blue-500",
+        emptyText: "text-slate-500"
+      };
+
   return (
     <section className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-4 border-b border-white/10 pb-6">
+      <div className={`flex flex-wrap items-start justify-between gap-4 border-b pb-6 ${palette.divider}`}>
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">Notes</h1>
-          <p className="mt-1 text-sm sm:text-base text-slate-400">
-            Study subject-specific notes and chapters tailored for the national exit exam.
+          <h1 className={`text-2xl sm:text-3xl font-bold tracking-tight ${palette.title}`}>Notes</h1>
+          <p className={`mt-1 text-sm sm:text-base ${palette.description}`}>
+            Structured PDF notes uploaded by admins.
           </p>
         </div>
 
@@ -207,65 +130,77 @@ function StudyNotesPage() {
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Search..."
-            className="w-full rounded-xl border border-white/10 bg-white/5 py-2.5 pl-10 pr-3 text-sm text-slate-200 outline-none placeholder:text-slate-500 focus:border-white/25"
+            className={`w-full rounded-xl border py-2.5 pl-10 pr-3 text-sm outline-none ${palette.searchInput}`}
           />
         </label>
       </div>
 
-      {loading ? <p className="text-sm text-slate-500">Loading notes...</p> : null}
+      {loading ? <p className={`text-sm ${palette.emptyText}`}>Loading notes...</p> : null}
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      <div className={`overflow-hidden rounded-2xl border ${palette.listWrap}`}>
+        <div className={`hidden grid-cols-[minmax(240px,1.2fr)_minmax(210px,1fr)_120px_210px] gap-4 border-b px-5 py-3 text-xs font-semibold uppercase tracking-[0.16em] md:grid ${palette.rowDivider} ${palette.description}`}>
+          <span>PDF Note</span>
+          <span>Course Info</span>
+          <span>Downloads</span>
+          <span>Actions</span>
+        </div>
+
         {filteredTopics.map((topic) => (
-          <article key={topic.id} className="rounded-3xl border border-white/10 bg-white/5 p-5">
-            <div className="flex items-start justify-between gap-3">
-              <div className="grid h-18 w-18 place-items-center rounded-2xl bg-blue-500/20 text-blue-300">
-                <FileText size={32} />
+          <article
+            key={topic.id}
+            className={`grid gap-3 border-b px-4 py-4 last:border-b-0 md:grid-cols-[minmax(240px,1.2fr)_minmax(210px,1fr)_120px_210px] md:items-center md:gap-4 md:px-5 ${palette.rowDivider}`}
+          >
+            <div className="flex min-w-0 items-start gap-3">
+              <div className="mt-0.5 grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-blue-500/15 text-blue-400">
+                <FileText size={18} />
               </div>
-              <span className="rounded-lg bg-emerald-500/20 px-3 py-1 text-sm font-semibold text-emerald-300">
-                Notes
+              <div className="min-w-0">
+                <h3 className={`truncate text-base font-semibold sm:text-lg ${palette.noteTitle}`}>{topic.title}</h3>
+                <p className={`mt-1 truncate text-xs sm:text-sm ${palette.noteMeta}`}>Year: {topic.year || "-"}</p>
+              </div>
+            </div>
+
+            <div className="min-w-0">
+              <p className={`truncate text-sm ${palette.noteMeta}`}>{topic.description}</p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${palette.chip}`}>
+                PDF
               </span>
+              <span className={`text-sm font-semibold ${palette.downloadCount}`}>{topic.downloads} downloads</span>
             </div>
 
-            <h3 className="mt-6 min-h-16 text-2xl font-semibold tracking-tight text-white">{topic.title}</h3>
-
-            <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-slate-300">
-              <p className="text-lg">Year: {topic.year || "-"}</p>
-              <p className="inline-flex items-center gap-1 text-lg">
-                <Star size={18} className="fill-yellow-400 text-yellow-400" />
-                {topic.rating ? topic.rating.toFixed(1) : "4.6"}
-              </p>
-            </div>
-
-            <p className="mt-5 text-lg text-slate-400">{topic.downloads || 0} downloads</p>
-
-            <div className="mt-6 grid grid-cols-2 gap-3">
+            <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={() => topic.fileUrl && openInNewTab(topic.fileUrl)}
                 disabled={!topic.fileUrl}
-                className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm font-semibold text-slate-200 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
+                className={`inline-flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${palette.openButton}`}
               >
-                <ExternalLink size={16} />
+                <ExternalLink size={15} />
                 Open
               </button>
 
               <button
                 type="button"
                 onClick={() => startDownload(topic)}
-                disabled={!topic.fileUrl || busyResourceId === topic.id || !topic.isUploaded}
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-500 px-3 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-400 disabled:cursor-not-allowed disabled:opacity-50"
+                disabled={!topic.fileUrl || busyResourceId === topic.id}
+                className={`inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${palette.downloadButton}`}
               >
-                <Download size={16} />
+                <Download size={15} />
                 {busyResourceId === topic.id ? "Saving..." : "Download"}
               </button>
             </div>
-
-            <p className="mt-4 text-sm text-slate-500">{topic.description}</p>
           </article>
         ))}
-      </div>
 
-      {!loading && filteredTopics.length === 0 ? <p className="text-sm text-slate-500">No notes matched your search.</p> : null}
+        {!loading && filteredTopics.length === 0 ? (
+          <p className={`px-4 py-6 text-sm md:px-5 ${palette.emptyText}`}>
+            No admin-uploaded PDF notes matched your search.
+          </p>
+        ) : null}
+      </div>
     </section>
   );
 }

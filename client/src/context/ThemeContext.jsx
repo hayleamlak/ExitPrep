@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 
 const THEME_KEY = "exitprep_theme";
+const DEFAULT_THEME = "light";
 const ThemeContext = createContext(null);
 
 function getStoredTheme() {
@@ -10,7 +11,7 @@ function getStoredTheme() {
     return stored;
   }
 
-  return "light";
+  return DEFAULT_THEME;
 }
 
 export function ThemeProvider({ children }) {

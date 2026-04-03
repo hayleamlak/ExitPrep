@@ -2,6 +2,7 @@ import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { ThemeProvider } from "./context/ThemeContext";
 import AppShell from "./components/AppShell";
+import HomePage from "./pages/HomePage";
 import DashboardPage from "./pages/DashboardPage";
 import StudyNotesPage from "./pages/StudyNotesPage";
 import PracticeQuestionsPage from "./pages/PracticeQuestionsPage";
@@ -11,7 +12,7 @@ import SignInPage from "./pages/SignInPage";
 import SignUpPage from "./pages/SignUpPage";
 
 function defaultRouteForRole(role) {
-  return role === "admin" ? "/admin" : "/study-notes";
+  return role === "admin" ? "/app/admin" : "/app/study-notes";
 }
 
 function RequireAuth({ children }) {
@@ -45,7 +46,7 @@ function PublicRedirect() {
   const { isAuthenticated, user } = useAuth();
 
   if (!isAuthenticated) {
-    return <Navigate to="/signin" replace />;
+    return <Navigate to="/" replace />;
   }
 
   return <Navigate to={defaultRouteForRole(user?.role)} replace />;
@@ -56,10 +57,11 @@ function App() {
     <ThemeProvider>
       <AuthProvider>
         <Routes>
+          <Route path="/" element={<HomePage />} />
           <Route path="/signin" element={<SignInPage />} />
           <Route path="/signup" element={<SignUpPage />} />
           <Route
-            path="/"
+            path="/app"
             element={
               <RequireAuth>
                 <AppShell />

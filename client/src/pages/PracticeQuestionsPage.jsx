@@ -28,13 +28,17 @@ function sanitizeOptions(options) {
 function normalizeQuestion(item, index) {
   const options = sanitizeOptions(item?.options);
   const rawCorrectAnswer = typeof item?.correctAnswer === "string" ? item.correctAnswer.trim() : "";
+  const subject = sentenceCase(item?.subject || item?.courseName || "General");
+  const topic = typeof item?.topic === "string" && item.topic.trim() ? item.topic.trim() : subject;
 
   return {
     id: item?._id || `${(item?.subject || "general").toLowerCase()}-${index}`,
     questionText: item?.questionText || "",
     options,
     correctAnswer: rawCorrectAnswer,
-    explanation: typeof item?.explanation === "string" ? item.explanation : ""
+    explanation: typeof item?.explanation === "string" ? item.explanation : "",
+    subject,
+    topic
   };
 }
 
@@ -224,6 +228,22 @@ function PracticeQuestionsPage() {
       ...previous,
       [activeTopic.id]: activeTopic.total
     }));
+
+    const answeredAttempts = activeTopic.questions
+      .filter((question) => Boolean(selectedAnswers[question.id]))
+      .map((question) => ({
+        course: question.subject || activeTopic.title,
+        topic: question.topic || question.subject || activeTopic.title,
+        isCorrect: selectedAnswers[question.id] === question.correctAnswer
+      }));
+
+    if (!answeredAttempts.length) {
+      return;
+    }
+
+    api.post("/attempts/bulk", { attempts: answeredAttempts }).catch(() => {
+      // Keep the quiz usable even if analytics tracking fails.
+    });
   };
 
   const handleNext = () => {

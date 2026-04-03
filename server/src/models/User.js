@@ -4,6 +4,7 @@ const bcrypt = require("bcryptjs");
 const userActivitySchema = new mongoose.Schema(
   {
     subject: { type: String, required: true },
+    topic: { type: String },
     score: { type: Number, min: 0, max: 5 },
     total: { type: Number, default: 5 },
     activityType: {

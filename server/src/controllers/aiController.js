@@ -47,7 +47,7 @@ async function dashboardRecommendation(req, res) {
 async function addActivity(req, res) {
   try {
     const studentId = req.user.role === "student" ? req.user.id : req.body.studentId;
-    const { subject, score, total, activityType } = req.body;
+    const { subject, topic, score, total, activityType } = req.body;
 
     if (!studentId || !subject) {
       return res.status(400).json({ message: "studentId and subject are required" });
@@ -60,6 +60,7 @@ async function addActivity(req, res) {
 
     student.activityLog.push({
       subject,
+      topic: typeof topic === "string" && topic.trim() ? topic.trim() : subject,
       score: Number(score || 0),
       total: Number(total || 5),
       activityType: activityType || "practice"

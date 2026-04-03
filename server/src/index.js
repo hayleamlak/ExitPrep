@@ -15,6 +15,14 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+app.get("/", (_req, res) => {
+  res.json({
+    status: "ok",
+    message: "ExitPrep API is live",
+    health: "/api/health",
+  });
+});
+
 app.get("/api/health", (_req, res) => {
   res.json({ status: "ok", service: "ExitPrep+ API" });
 });

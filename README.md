@@ -1,68 +1,238 @@
-# ExitPrep+ Website
+# ExitPrep Ethiopia
 
-This workspace now contains a full implementation of the ExitPrep+ web platform from your documentation.
+Web platform for Ethiopian university students to prepare for exit exams.
 
-## Stack
-- Frontend: React + Vite + Tailwind CSS
-- Backend: Node.js + Express + MongoDB
-- AI: Hugging Face inference API (`/api/ai/dashboard`)
-- File hosting: Cloudinary-ready upload pipeline
+ExitPrep centralizes study resources, assessment practice, progress analytics, and AI-powered support in one platform designed for both students and administrators.
 
-##Project Structure
-- `client` - dashboard, study notes, practice questions, admin panel
-- `server` - auth, resources, questions, exams, AI analytics APIs
-## Backend Setup
-1. Go to `server`.
-2. Copy `.env.example` to `.env`.
-3. Fill in MongoDB, JWT, Hugging Face, and Cloudinary values.
-4. Install and run:
-   - `npm install`
-   - `npm run dev`
-## Frontend Setup
-1. Go to `client`.
-2. Copy `.env.example` to `.env`.
-3. Install and run:
-   - `npm install`
-   - `npm run dev`
-## Deployment (Recommended: Render Free)
-Render is the best free option for this project because it supports both a Node API and static frontend hosting from one repo.
+## Description
 
-1. Push this repository to GitHub.
-2. In Render, click `New +` -> `Blueprint`.
-3. Connect your GitHub repo and select this project.
-4. Render will read [render.yaml](render.yaml) and create:
-   - `exitprep-api` (Node web service)
-   - `exitprep-web` (static frontend)
-5. Set required environment variables for `exitprep-api`:
-   - `MONGODB_URI`
-   - `JWT_SECRET`
-   - `HUGGING_FACE_API_KEY`
-   - `CLOUDINARY_CLOUD_NAME`
-   - `CLOUDINARY_API_KEY`
-   - `CLOUDINARY_API_SECRET`
-6. After the API deploys, set `VITE_API_URL` for `exitprep-web` to:
-   - `https://<your-api-service>.onrender.com/api`
-7. Redeploy the static site once after setting `VITE_API_URL`.
+ExitPrep Ethiopia helps students prepare for Ethiopian University Exit Exams through:
 
-Notes:
-- Free web services on Render can sleep after inactivity.
-- `client/.env` and `server/.env` are local-only; production uses Render env vars.
+- Centralized study materials and downloadable resources
+- Practice questions grouped by category and department
+- Course-based performance tracking and weak-topic detection
+- Role-based admin controls for managing content and users
+- AI-assisted learning support for summaries and recommendations
 
-## API Endpoints
-- `POST /api/auth/register`
-- `POST /api/auth/login`
-- `GET /api/resources`
-- `POST /api/resources` (admin)
-- `GET /api/questions`
-- `POST /api/questions` (admin)
-- `GET /api/exams`
-- `POST /api/exams` (admin)
-- `POST /api/ai/dashboard` (student/admin with token)
-- `POST /api/ai/activity` (student/admin with token)
+Primary goals:
 
-## Quick Start Flow
-1. Register a student/admin through auth endpoints.
-2. Login and copy JWT token.
-3. Open frontend dashboard and paste token.
-4. Generate AI recommendation using sample or real subject scores.
-5. Use admin page to upload resources metadata.
+1. Improve access to quality exam preparation content
+2. Provide measurable progress and readiness insights
+3. Enable scalable content management for institutions/admin teams
+
+## Key Features
+
+### Student Experience
+
+- Public homepage with modern landing page
+- Sign up/sign in with protected routes
+- Study notes page
+- Practice questions with category-based modes:
+  - EUEE Simulation
+  - Official Exams (Past Exam)
+  - Custom Department Questions
+- Dashboard/Insights page with dynamic performance metrics
+- Profile page with account and preference controls
+- Light and dark theme support
+- Responsive mobile and desktop layout
+
+### Admin Experience
+
+- Role-based admin panel
+- Upload resources (PDF workflow)
+- JSON-based question import with category selection dropdown
+- Category filtering and structured question management
+- User management (roles, suspension, activity snapshot)
+- Analytics overview and moderation scaffolding
+
+### AI Support
+
+- AI summary and recommendation integration
+- Weak-topic recommendation pipeline
+- Activity tracking support for personalized insights
+
+## Tech Stack
+
+- Frontend: React, Vite, Tailwind CSS, React Router
+- Backend: Node.js, Express
+- Database: MongoDB, Mongoose
+- Authentication: JWT
+- AI: Hugging Face or OpenAI-compatible integration
+- File Handling: Multer, Cloudinary pipeline
+- Deployment: Render blueprint with [render.yaml](render.yaml)
+
+## Project Structure
+
+- [client](client): Frontend application (student and admin interfaces)
+- [server](server): Backend APIs, auth, resources, questions, insights, AI routes
+- [render.yaml](render.yaml): Deployment blueprint for Render services
+
+## Screenshots / Demo
+
+### Home
+
+Add homepage screenshot here:
+
+![Home Placeholder](https://via.placeholder.com/1280x720?text=ExitPrep+Home+Preview)
+
+### Optional Additional Screens
+
+- Student Dashboard
+- Questions Category Selection
+- Admin Upload Panel
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js 18+
+- npm 9+
+- MongoDB instance (local or cloud)
+
+### Backend Setup
+
+1. Open terminal in [server](server)
+2. Create environment file based on your template
+3. Install dependencies
+4. Start development server
+
+Commands:
+
+    npm install
+    npm run dev
+
+### Frontend Setup
+
+1. Open terminal in [client](client)
+2. Create environment file for frontend variables
+3. Install dependencies
+4. Start development server
+
+Commands:
+
+    npm install
+    npm run dev
+
+## Environment Variables
+
+### Backend (server)
+
+- MONGODB_URI
+- JWT_SECRET
+- HUGGING_FACE_API_KEY (or equivalent AI key)
+- CLOUDINARY_CLOUD_NAME
+- CLOUDINARY_API_KEY
+- CLOUDINARY_API_SECRET
+
+### Frontend (client)
+
+- VITE_API_URL
+
+Example value:
+
+    http://localhost:5000/api
+
+## API Overview
+
+### Authentication
+
+- POST /api/auth/register
+- POST /api/auth/login
+
+### Questions
+
+- GET /api/questions
+- POST /api/questions (admin)
+- POST /api/questions/bulk (admin, JSON import)
+
+Filtering supports category-based queries:
+
+- category=simulation
+- category=past
+- category=custom
+
+### Resources
+
+- GET /api/resources
+- POST /api/resources (admin)
+
+### Exams
+
+- GET /api/exams
+- POST /api/exams (admin)
+
+### Insights and Attempts
+
+- GET /api/attempts/courses
+- GET /api/attempts/insights
+- POST /api/attempts
+- POST /api/attempts/bulk
+
+### AI
+
+- POST /api/ai/dashboard
+- POST /api/ai/activity
+
+## JSON Question Upload Format
+
+Upload as a JSON array of question objects.
+
+Required fields per question:
+
+- category: simulation, past, or custom
+- courseName
+- questionText
+- options (exactly 4 values)
+- correctAnswer
+- explanation
+
+Optional fields:
+
+- examYear
+- difficulty
+
+Example:
+
+    [
+      {
+        "category": "simulation",
+        "courseName": "Database Systems",
+        "questionText": "What is a primary key?",
+        "options": ["A", "B", "C", "D"],
+        "correctAnswer": "A",
+        "explanation": "A primary key uniquely identifies each row."
+      }
+    ]
+
+## Deployment
+
+Recommended deployment target: Render.
+
+1. Push repository to GitHub
+2. Create new Render Blueprint
+3. Connect repository
+4. Render reads [render.yaml](render.yaml) and provisions services
+5. Set backend and frontend environment variables
+6. Redeploy frontend after VITE_API_URL is configured
+
+## Roadmap
+
+- Department-level exam blueprints
+- Adaptive quiz generation based on weak topics
+- Time-based test simulation mode
+- Better analytics visualizations and longitudinal trends
+- Institution dashboards for cohort-level monitoring
+
+## Contribution
+
+Contributions are welcome.
+
+Recommended process:
+
+1. Create feature branch
+2. Commit focused changes
+3. Open pull request with clear summary and screenshots
+
+## License
+
+Add your preferred license here (for example MIT).

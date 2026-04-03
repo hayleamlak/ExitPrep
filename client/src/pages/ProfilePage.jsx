@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ArrowRight, ArrowUpRight, LogOut, Mail, Pencil, Search, Sun } from "lucide-react";
+import { ArrowRight, ArrowUpRight, LogOut, Mail, Pencil, Search, Sun, UserRound } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 
@@ -136,12 +136,36 @@ function ProfilePage() {
         <div className={`overflow-hidden rounded-3xl border ${palette.panel} ${palette.panelShadow}`}>
           <div className={`flex items-center gap-4 border-b px-4 py-5 sm:px-5 ${palette.rowBorder}`}>
             <div className={`grid h-12 w-12 place-items-center rounded-2xl ${palette.iconNeutral}`}>
+              <UserRound size={20} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className={`text-sm font-semibold uppercase tracking-[0.18em] ${palette.section}`}>Name</p>
+              <p className={`mt-1 truncate text-3xl font-semibold tracking-tight ${palette.title}`}>
+                {user?.name || "No name available"}
+              </p>
+            </div>
+          </div>
+
+          <div className={`flex items-center gap-4 border-b px-4 py-5 sm:px-5 ${palette.rowBorder}`}>
+            <div className={`grid h-12 w-12 place-items-center rounded-2xl ${palette.iconNeutral}`}>
+              <Mail size={20} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className={`text-sm font-semibold uppercase tracking-[0.18em] ${palette.section}`}>Email</p>
+              <p className={`mt-1 truncate text-2xl font-semibold tracking-tight ${palette.title}`}>
+                {user?.email || "No email available"}
+              </p>
+            </div>
+          </div>
+
+          <div className={`flex items-center gap-4 border-b px-4 py-5 sm:px-5 ${palette.rowBorder}`}>
+            <div className={`grid h-12 w-12 place-items-center rounded-2xl ${palette.iconNeutral}`}>
               <Mail size={20} />
             </div>
             <div className="min-w-0 flex-1">
               <p className={`text-sm font-semibold uppercase tracking-[0.18em] ${palette.section}`}>Membership</p>
               <p className={`mt-1 text-4xl font-semibold tracking-tight ${palette.title}`}>{joinedText}</p>
-              <p className={`mt-1 truncate text-sm ${palette.rowSub}`}>{user?.email || "No email available"}</p>
+              <p className={`mt-1 truncate text-sm ${palette.rowSub}`}>Account details from your profile data</p>
             </div>
           </div>
 

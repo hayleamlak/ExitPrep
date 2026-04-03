@@ -6,6 +6,18 @@ const questionSchema = new mongoose.Schema(
     options: [{ type: String, required: true }],
     correctAnswer: { type: String, required: true },
     subject: { type: String, required: true },
+    category: {
+      type: String,
+      enum: ["simulation", "past", "custom"],
+      default: "custom",
+      index: true
+    },
+    sourceType: {
+      type: String,
+      enum: ["simulation", "past", "custom"],
+      default: "custom"
+    },
+    examYear: { type: Number },
     explanation: { type: String },
     difficulty: {
       type: String,

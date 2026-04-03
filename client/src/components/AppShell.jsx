@@ -12,7 +12,6 @@ const studentItems = [
 const adminItems = [{ to: "/app/admin", label: "Admin Panel", icon: ShieldCheck }];
 
 const guidanceItems = [
-  { to: "/app/profile", label: "Profile", icon: UserRound },
   { to: "/app/dashboard", label: "Insights", icon: Rocket },
   { to: "/app/dashboard", label: "Guide", icon: CircleHelp }
 ];
@@ -58,6 +57,7 @@ function AppShell() {
   const location = useLocation();
   const isAdmin = user?.role === "admin";
   const hideSidebar = location.pathname.startsWith("/app/admin");
+  const hideTopBar = location.pathname.startsWith("/app/admin");
   const userInitial = (user?.name || user?.email || "U").slice(0, 1).toUpperCase();
   const navigationItems = isAdmin ? [...studentItems, ...adminItems] : studentItems;
 
@@ -129,10 +129,17 @@ function AppShell() {
             <div className={`mt-3 inline-flex rounded-full border px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.18em] ${shellClasses.badge}`}>
               {user?.role || "student"}
             </div>
+            <NavLink
+              to="/app/profile"
+              className={`mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl border px-3 py-2 text-sm font-semibold transition ${shellClasses.button}`}
+            >
+              <UserRound size={15} />
+              Profile
+            </NavLink>
             <button
               type="button"
               onClick={signOut}
-              className={`mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl border px-3 py-2 text-sm font-semibold transition ${shellClasses.button}`}
+              className={`mt-2 inline-flex w-full items-center justify-center gap-2 rounded-xl border px-3 py-2 text-sm font-semibold transition ${shellClasses.button}`}
             >
               <LogOut size={15} />
               Sign out
@@ -141,23 +148,25 @@ function AppShell() {
         </aside>
 
         <div className={`min-w-0 ${hideSidebar ? "" : "lg:ml-[320px] lg:pl-4"}`}>
-          <header className={`mb-3 flex items-center gap-3 rounded-2xl border px-3 py-2.5 backdrop-blur sm:px-4 sm:py-3 ${shellClasses.topBar}`}>
-            <button
-              type="button"
-              className="grid h-9 w-9 place-items-center rounded-full border border-slate-300 bg-white text-slate-500"
-            >
-              <ChevronLeft size={16} />
-            </button>
-            <div>
-              <p className="text-xs uppercase tracking-[0.24em] text-slate-500">ExitPrep+</p>
-              <p className={`text-xs font-medium sm:text-sm ${shellClasses.textMain}`}>AI learning workspace</p>
-            </div>
-            <div className="ml-auto hidden md:block">
-              <div className={`rounded-xl border px-3 py-2 text-xs ${isDark ? "border-white/10 bg-white/5 text-slate-400" : "border-slate-200 bg-white text-slate-500"}`}>
-                National Exit Exam Preparation
+          {!hideTopBar ? (
+            <header className={`mb-3 flex items-center gap-3 rounded-2xl border px-3 py-2.5 backdrop-blur sm:px-4 sm:py-3 ${shellClasses.topBar}`}>
+              <button
+                type="button"
+                className="grid h-9 w-9 place-items-center rounded-full border border-slate-300 bg-white text-slate-500"
+              >
+                <ChevronLeft size={16} />
+              </button>
+              <div>
+                <p className="text-xs uppercase tracking-[0.24em] text-slate-500">ExitPrep+</p>
+                <p className={`text-xs font-medium sm:text-sm ${shellClasses.textMain}`}>AI learning workspace</p>
               </div>
-            </div>
-          </header>
+              <div className="ml-auto hidden md:block">
+                <div className={`rounded-xl border px-3 py-2 text-xs ${isDark ? "border-white/10 bg-white/5 text-slate-400" : "border-slate-200 bg-white text-slate-500"}`}>
+                  National Exit Exam Preparation
+                </div>
+              </div>
+            </header>
+          ) : null}
 
           <main className={`rounded-[26px] border p-4 shadow-[0_20px_70px_rgba(15,23,42,0.14)] sm:p-6 ${shellClasses.panel}`}>
             <Outlet />

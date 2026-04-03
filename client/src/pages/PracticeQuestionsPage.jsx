@@ -13,9 +13,43 @@ function sentenceCase(value) {
   return normalized.charAt(0).toUpperCase() + normalized.slice(1);
 }
 
-function createDescription(subject) {
-  return `Practice questions for ${subject.toLowerCase()} to improve confidence and exam readiness.`;
+function createDescription(subject, mode, year) {
+  const yearSuffix = year ? ` (${year})` : "";
+
+  if (mode === "past") {
+    return `Past EUEE quiz set for ${subject.toLowerCase()}${yearSuffix}.`;
+  }
+
+  if (mode === "custom") {
+    return `Custom department questions for ${subject.toLowerCase()}.`;
+  }
+
+  return `EUEE simulation questions for ${subject.toLowerCase()} to improve exam readiness.`;
 }
+
+const modeCards = [
+  {
+    id: "simulation",
+    badge: "FULL SIMULATION",
+    title: "EUEE Simulation",
+    description: "Generate simulation tests distributed across EUEE core subjects.",
+    cta: "Start Simulation"
+  },
+  {
+    id: "past",
+    badge: "OFFICIAL EXAMS",
+    title: "Past Exam",
+    description: "Practice from archived Ethiopian University Exit Exam question sets.",
+    cta: "Explore Archives"
+  },
+  {
+    id: "custom",
+    badge: "CUSTOM QUESTION",
+    title: "Department Questions",
+    description: "Choose your department and start custom quiz sets by subject.",
+    cta: "Choose Department"
+  }
+];
 
 function sanitizeOptions(options) {
   if (!Array.isArray(options)) {
@@ -38,7 +72,10 @@ function normalizeQuestion(item, index) {
     correctAnswer: rawCorrectAnswer,
     explanation: typeof item?.explanation === "string" ? item.explanation : "",
     subject,
-    topic
+    topic,
+    category: typeof item?.category === "string" ? item.category : typeof item?.sourceType === "string" ? item.sourceType : "custom",
+    sourceType: typeof item?.sourceType === "string" ? item.sourceType : "custom",
+    examYear: Number.isFinite(Number(item?.examYear)) ? Number(item.examYear) : null
   };
 }
 
@@ -48,6 +85,7 @@ function PracticeQuestionsPage() {
   const [topics, setTopics] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [quizMode, setQuizMode] = useState("");
   const [activeTopicId, setActiveTopicId] = useState("");
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState({});
@@ -114,15 +152,24 @@ function PracticeQuestionsPage() {
 
   useEffect(() => {
     const loadQuestions = async () => {
+      if (!quizMode) {
+        setTopics([]);
+        setLoading(false);
+        setError("");
+        return;
+      }
+
       setLoading(true);
       setError("");
 
       try {
-        const response = await api.get("/questions");
+        const params = { category: quizMode };
+        const response = await api.get("/questions", { params });
         const questions = Array.isArray(response.data) ? response.data : [];
 
         const grouped = questions.reduce((acc, item, index) => {
           const subject = sentenceCase(item?.subject || item?.courseName || "General");
+          const year = Number.isFinite(Number(item?.examYear)) ? Number(item.examYear) : null;
           const key = subject.toLowerCase();
           const normalizedQuestion = normalizeQuestion(item, index);
 
@@ -140,7 +187,7 @@ function PracticeQuestionsPage() {
             acc[key] = {
               id: key,
               title: subject,
-              description: createDescription(subject),
+              description: createDescription(subject, quizMode, year),
               completed: 0,
               total: 0,
               questions: []
@@ -152,7 +199,21 @@ function PracticeQuestionsPage() {
           return acc;
         }, {});
 
-        setTopics(Object.values(grouped).sort((a, b) => a.title.localeCompare(b.title)));
+        const groupedTopics = Object.values(grouped).sort((a, b) => a.title.localeCompare(b.title));
+
+        if (quizMode === "simulation" && questions.length > 0) {
+          const allQuestions = groupedTopics.flatMap((topic) => topic.questions);
+          groupedTopics.unshift({
+            id: "full-euee-simulation",
+            title: "EUEE Full Simulation",
+            description: "Mixed simulation across all available EUEE subjects.",
+            completed: 0,
+            total: allQuestions.length,
+            questions: allQuestions
+          });
+        }
+
+        setTopics(groupedTopics);
       } catch (err) {
         setError(err.response?.data?.message || "Failed to load questions.");
       } finally {
@@ -161,7 +222,15 @@ function PracticeQuestionsPage() {
     };
 
     loadQuestions();
-  }, []);
+  }, [quizMode]);
+
+  useEffect(() => {
+    setActiveTopicId("");
+    setCurrentQuestionIndex(0);
+    setSelectedAnswers({});
+    setIsSubmitted(false);
+    setSearch("");
+  }, [quizMode]);
 
   const filteredTopics = useMemo(() => {
     const term = search.toLowerCase();
@@ -262,27 +331,69 @@ function PracticeQuestionsPage() {
     <section className="space-y-6">
       <div className={`flex flex-wrap items-start justify-between gap-4 border-b pb-6 ${palette.divider}`}>
         <div>
-          <h1 className={`text-2xl font-bold tracking-tight sm:text-3xl ${palette.title}`}>Questions</h1>
+          <h1 className={`text-2xl font-bold tracking-tight sm:text-3xl ${palette.title}`}>EUEE Assessments</h1>
           <p className={`mt-1 text-sm sm:text-base ${palette.description}`}>
-            Practice with real national exit exam questions to verify and increase your subject mastery.
+            First choose EUEE Simulation, Past Exam, or Custom Questions by department.
           </p>
         </div>
 
-        <label className="relative block w-full max-w-xs">
-          <Search size={17} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-          <input
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search..."
-            className={`w-full rounded-xl border py-2.5 pl-10 pr-3 text-sm outline-none ${palette.searchInput}`}
-          />
-        </label>
+        {quizMode ? (
+          <div className="flex w-full max-w-xs flex-col gap-2">
+            <button
+              type="button"
+              onClick={() => setQuizMode("")}
+              className={`rounded-xl border px-3 py-2 text-sm font-semibold transition ${palette.shareButton}`}
+            >
+              Change mode
+            </button>
+
+            <label className="relative block w-full">
+              <Search size={17} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+              <input
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder={quizMode === "custom" ? "Search department..." : "Search..."}
+                className={`w-full rounded-xl border py-2.5 pl-10 pr-3 text-sm outline-none ${palette.searchInput}`}
+              />
+            </label>
+          </div>
+        ) : null}
       </div>
 
-      {loading ? <p className={`text-sm ${palette.emptyText}`}>Loading questions...</p> : null}
-      {error ? <p className={`rounded-xl border px-3 py-2 text-sm ${palette.error}`}>{error}</p> : null}
+      {!quizMode ? (
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {modeCards.map((card) => (
+            <article key={card.id} className={`rounded-3xl border p-5 sm:p-6 ${palette.listWrap}`}>
+              <div className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold tracking-[0.2em] ${palette.shareButton}`}>
+                {card.badge}
+              </div>
+              <h2 className={`mt-5 text-3xl font-semibold tracking-tight ${palette.title}`}>{card.title}</h2>
+              <p className={`mt-3 text-base leading-relaxed ${palette.description}`}>{card.description}</p>
+              <button
+                type="button"
+                onClick={() => setQuizMode(card.id)}
+                className="mt-6 rounded-2xl border border-slate-900 bg-slate-900 px-5 py-2.5 text-sm font-bold uppercase tracking-[0.16em] text-white"
+              >
+                {card.cta}
+              </button>
+            </article>
+          ))}
+        </div>
+      ) : null}
 
-      {!loading && !error && !activeTopic ? (
+      {quizMode && loading ? <p className={`text-sm ${palette.emptyText}`}>Loading questions...</p> : null}
+      {error ? <p className={`rounded-xl border px-3 py-2 text-sm ${palette.error}`}>{error}</p> : null}
+      {quizMode && !loading && !error && !topics.length ? (
+        <p className={`rounded-xl border px-3 py-2 text-sm ${palette.error}`}>
+          {quizMode === "past"
+            ? "No past EUEE quiz questions found. Import questions with sourceType set to past."
+            : quizMode === "custom"
+              ? "No custom department questions found. Import questions with sourceType set to custom."
+              : "No simulation questions found yet. Import questions with sourceType set to simulation."}
+        </p>
+      ) : null}
+
+      {quizMode && !loading && !error && !activeTopic ? (
         <div className={`overflow-hidden rounded-2xl border ${palette.listWrap}`}>
           {filteredTopics.map((topic, index) => (
             <div

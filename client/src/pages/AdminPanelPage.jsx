@@ -13,11 +13,13 @@ import {
   Megaphone,
   PenSquare,
   LogOut,
+  Moon,
   Search,
   ShieldCheck,
   Sparkles,
   ToggleLeft,
   Trash2,
+  Sun,
   Users
 } from "lucide-react";
 import api from "../services/api";
@@ -30,8 +32,15 @@ const emptyUploadForm = {
 };
 
 const emptyBulkQuestionForm = {
-  courseName: ""
+  courseName: "",
+  category: "simulation"
 };
+
+const categoryOptions = [
+  { value: "simulation", label: "EUEE Simulation" },
+  { value: "past", label: "Official Exams (Past Exam)" },
+  { value: "custom", label: "Custom Department Questions" }
+];
 
 const adminFeatureNav = [
   { id: "users", label: "User Management", icon: Users },
@@ -45,7 +54,7 @@ const adminFeatureNav = [
 
 function AdminPanelPage() {
   const { signOut, user } = useAuth();
-  const { isDark } = useTheme();
+  const { isDark, theme, toggleTheme } = useTheme();
   const [activeSection, setActiveSection] = useState("users");
   const [uploadForm, setUploadForm] = useState(emptyUploadForm);
   const [pdfFile, setPdfFile] = useState(null);
@@ -342,7 +351,13 @@ function AdminPanelPage() {
 
       setQuestionUploadState("Uploading questions...");
 
-      const response = await api.post("/questions/bulk", items, {
+      const itemsWithCategory = items.map((item) => ({
+        ...item,
+        category: bulkQuestionForm.category,
+        sourceType: bulkQuestionForm.category
+      }));
+
+      const response = await api.post("/questions/bulk", itemsWithCategory, {
         onUploadProgress: (event) => {
           if (!event.total) return;
           const ratio = Math.round((event.loaded / event.total) * 100);
@@ -351,7 +366,7 @@ function AdminPanelPage() {
       });
 
       setQuestionUploadProgress(100);
-      setQuestionUploadState(response.data?.message || `Imported ${response.data?.importedCount || items.length} questions.`);
+      setQuestionUploadState(response.data?.message || `Imported ${response.data?.importedCount || itemsWithCategory.length} questions.`);
       setQuestionFile(null);
       setQuestionPreview([]);
       setBulkQuestionForm(emptyBulkQuestionForm);
@@ -593,7 +608,7 @@ function AdminPanelPage() {
             <PenSquare size={18} className={palette.accent} />
           </div>
 
-          <div className="mt-5 grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+          <div className="mt-5 grid gap-6 xl:grid-cols-[1fr_1fr]">
             <form onSubmit={submitBulkQuestions} className={`rounded-2xl border p-4 sm:p-5 ${palette.softCardAlt}`}>
               <div className="space-y-4">
                 <div>
@@ -608,10 +623,23 @@ function AdminPanelPage() {
                   <input
                     type="text"
                     value={bulkQuestionForm.courseName}
-                    onChange={(event) => setBulkQuestionForm({ courseName: event.target.value })}
+                    onChange={(event) => setBulkQuestionForm((current) => ({ ...current, courseName: event.target.value }))}
                     placeholder="e.g. Database Systems"
                     className={`w-full rounded-xl border px-3 py-2.5 text-sm outline-none ${palette.input}`}
                   />
+                </label>
+
+                <label className="block">
+                  <span className={`mb-1.5 block text-sm font-semibold ${palette.text}`}>Category</span>
+                  <select
+                    value={bulkQuestionForm.category}
+                    onChange={(event) => setBulkQuestionForm((current) => ({ ...current, category: event.target.value }))}
+                    className={`w-full rounded-xl border px-3 py-2.5 text-sm outline-none ${palette.input}`}
+                  >
+                    {categoryOptions.map((option) => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
+                  </select>
                 </label>
 
                 <label className="block">
@@ -662,6 +690,7 @@ function AdminPanelPage() {
                   questionPreview.map((item, index) => (
                     <article key={`${item.questionText || "sample"}-${index}`} className={`rounded-2xl border p-4 ${palette.shell}`}>
                       <p className={`text-xs font-semibold uppercase tracking-[0.18em] ${palette.muted}`}>{item.courseName || bulkQuestionForm.courseName || "Course"}</p>
+                      <p className={`mt-1 text-xs ${palette.muted}`}>{categoryOptions.find((option) => option.value === bulkQuestionForm.category)?.label || "Category"}</p>
                       <p className={`mt-2 text-sm font-semibold ${palette.heading}`}>{item.questionText || "Question text"}</p>
                       <p className={`mt-2 text-xs ${palette.text}`}>{Array.isArray(item.options) ? item.options.join(" • ") : "4 options expected"}</p>
                     </article>
@@ -677,6 +706,7 @@ function AdminPanelPage() {
                 <p className={`text-xs font-semibold uppercase tracking-[0.18em] ${palette.muted}`}>Expected JSON item</p>
                 <pre className={`mt-3 overflow-x-auto text-xs leading-6 ${palette.text}`}>
 {`{
+  "category": "simulation",
   "courseName": "Database Systems",
   "questionText": "What is a primary key?",
   "options": ["A", "B", "C", "D"],
@@ -888,7 +918,15 @@ function AdminPanelPage() {
                 <p className={`text-xs font-semibold uppercase tracking-[0.22em] ${palette.muted}`}>Management Overview</p>
                 <h2 className={`mt-2 text-[clamp(1.35rem,2.1vw,1.75rem)] font-bold ${palette.heading}`}>{activeSectionTitle}</h2>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  onClick={toggleTheme}
+                  className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-semibold transition ${palette.control}`}
+                >
+                  {theme === "dark" ? <Sun size={15} /> : <Moon size={15} />}
+                  {theme === "dark" ? "Light mode" : "Dark mode"}
+                </button>
                 <label className="relative block w-full max-w-sm">
                   <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
                   <input

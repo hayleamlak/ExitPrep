@@ -8,7 +8,7 @@ This workspace now contains a full implementation of the ExitPrep+ web platform 
 - AI: Hugging Face inference API (`/api/ai/dashboard`)
 - File hosting: Cloudinary-ready upload pipeline
 
-## Project Structure
+##Project Structure
 - `client` - dashboard, study notes, practice questions, admin panel
 - `server` - auth, resources, questions, exams, AI analytics APIs
 

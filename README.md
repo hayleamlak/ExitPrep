@@ -1,65 +1,89 @@
 # ExitPrep AI Coach
 
-AI-powered study planning for Ethiopian university exit exam preparation.
+**AI-powered study planning** for Ethiopian university exit exam preparation.
 
-This README is focused on the AI feature: what it does, how to use it, how it is wired, and how to configure it.
+This document covers the **AI Coach** feature: behavior, usage, architecture, configuration, and troubleshooting.
 
-## What The AI Feature Does
+---
 
-- Generates a personalized weekly study plan from student performance data
-- Detects weak subjects/topics and prioritizes them in recommendations
-- Works from real attempt history and course/topic accuracy
-- Supports regeneration so students can refresh advice after new practice
-- Falls back to deterministic recommendations when external AI is unavailable
+## Table of contents
 
-## Where To Access It
+| Section | Description |
+|--------|-------------|
+| [Features](#features) | What the AI Coach does |
+| [Using AI Coach](#using-ai-coach) | Where to find it in the app |
+| [Architecture](#architecture) | Frontend, backend, and fallback behavior |
+| [API reference](#api-reference) | Endpoints and payloads |
+| [Environment variables](#environment-variables) | Backend and frontend configuration |
+| [Local setup](#local-setup) | Run client and server locally |
+| [Troubleshooting](#troubleshooting) | Common issues |
+| [Repository layout](#repository-layout) | Project links |
 
-In the web app:
+---
 
-1. Sign in as a student
-2. Go to Workspace -> Insights
-3. Find AI Coach section
-4. Click Generate Plan
+## Features
 
-The UI returns:
+| Capability | Details |
+|------------|---------|
+| **Personalized plans** | Builds a weekly-style study plan from student performance data |
+| **Weak-area focus** | Detects weak subjects/topics and prioritizes them |
+| **Data-driven** | Uses real attempt history and course/topic accuracy |
+| **Regeneration** | Students can refresh recommendations after new practice |
+| **Resilient** | Deterministic fallback when external AI is unavailable |
 
-- Recommendation text
-- Weak-subject chips
-- Generation timestamp
+---
 
-## AI Architecture
+## Using AI Coach
 
-Frontend:
+### In the web app
 
-- Dashboard UI triggers AI recommendation request
-- Sends subjectScores derived from topic accuracy
-- Renders returned recommendation and weak subjects
+1. Sign in as a **student**.
+2. Open **Workspace → Insights**.
+3. Locate the **AI Coach** section.
+4. Click **Generate Plan**.
 
-Backend:
+### What you see
 
-- Route: POST /api/ai/dashboard
-- Controller computes subject scores and weak subjects
-- Service calls Hugging Face model (if configured)
-- Response is persisted in analytics collection and returned to UI
+| Output | Description |
+|--------|-------------|
+| Recommendation text | Personalized study guidance |
+| Weak-subject chips | Subjects flagged for extra focus |
+| Timestamp | When the plan was generated |
 
-Fallback behavior:
+---
 
-- If HUGGING_FACE_API_KEY is missing or model call fails, backend returns a useful local recommendation
-- Students still get actionable AI Coach output without external API dependency
+## Architecture
 
-## AI API Reference
+### Frontend
 
-### POST /api/ai/dashboard
+- Dashboard UI sends the AI recommendation request.
+- Request includes `subjectScores` derived from topic accuracy.
+- UI renders the returned recommendation and weak subjects.
 
-Purpose:
+### Backend
 
-- Generate personalized recommendation for current student (or admin-selected student)
+| Step | Behavior |
+|------|----------|
+| Route | `POST /api/ai/dashboard` |
+| Controller | Computes subject scores and weak subjects |
+| Service | Calls Hugging Face when configured |
+| Persistence | Stores response in the analytics collection and returns it to the client |
 
-Auth:
+### Fallback behavior
 
-- Required (JWT)
+If `HUGGING_FACE_API_KEY` is missing or the model call fails, the backend returns a **local, deterministic** recommendation so students still receive actionable AI Coach output without depending on an external API.
 
-Request body (typical):
+---
+
+## API reference
+
+All AI endpoints require **JWT authentication**.
+
+### `POST /api/ai/dashboard`
+
+Generates a personalized recommendation for the current student (or an admin-selected student).
+
+**Request body (example)**
 
 ```json
 {
@@ -70,7 +94,7 @@ Request body (typical):
 }
 ```
 
-Response (typical):
+**Response (example)**
 
 ```json
 {
@@ -85,32 +109,34 @@ Response (typical):
 }
 ```
 
-### POST /api/ai/activity
+### `POST /api/ai/activity`
 
-Purpose:
+Appends student activity for AI and analytics pipelines.
 
-- Append student activity used by AI and analytics pipelines
+---
 
-Auth:
+## Environment variables
 
-- Required (JWT)
+### Backend
 
-## Environment Variables (AI)
+| Variable | Required | Notes |
+|----------|----------|--------|
+| `MONGODB_URI` | Yes | Database connection |
+| `JWT_SECRET` | Yes | Signing key for tokens |
+| `HUGGING_FACE_API_KEY` | No | Enables Hugging Face model calls |
+| `HUGGING_FACE_MODEL` | No | Default: `google/flan-t5-small` |
 
-Backend variables:
+### Frontend
 
-- MONGODB_URI
-- JWT_SECRET
-- HUGGING_FACE_API_KEY (optional)
-- HUGGING_FACE_MODEL (optional, default: google/flan-t5-small)
+| Variable | Example | Notes |
+|----------|---------|--------|
+| `VITE_API_URL` | `http://localhost:5000/api` | Base URL for API requests |
 
-Frontend variables:
+---
 
-- VITE_API_URL (example: http://localhost:5000/api)
+## Local setup
 
-## Local Setup (AI-Focused)
-
-Backend:
+### Backend
 
 ```bash
 cd server
@@ -118,7 +144,7 @@ npm install
 npm run dev
 ```
 
-Frontend:
+### Frontend
 
 ```bash
 cd client
@@ -126,32 +152,28 @@ npm install
 npm run dev
 ```
 
-After startup:
+### Verify AI Coach
 
-1. Log in
-2. Open Insights
-3. Click Generate Plan in AI Coach
+1. Log in.
+2. Open **Insights**.
+3. In **AI Coach**, click **Generate Plan**.
 
-## AI Troubleshooting
+---
 
-AI Coach not visible:
+## Troubleshooting
 
-- Open Workspace -> Insights
-- Refresh client after pull/build changes
+| Symptom | What to check |
+|---------|----------------|
+| **AI Coach not visible** | Use **Workspace → Insights**; refresh the client after pull or build changes. |
+| **Request fails** | Confirm `VITE_API_URL` points at the backend; ensure JWT/session is valid; inspect backend logs for `/api/ai/dashboard` errors. |
+| **Generic recommendation** | Expected when `HUGGING_FACE_API_KEY` is unset. Set the key for model-generated text. |
 
-Recommendation request fails:
+---
 
-- Verify VITE_API_URL points to backend
-- Verify JWT auth/session is valid
-- Check backend logs for /api/ai/dashboard errors
+## Repository layout
 
-Generic recommendation returned:
-
-- Expected when HUGGING_FACE_API_KEY is not set
-- Set API key to enable model-generated output
-
-## Minimal Project Links
-
-- Frontend app: [client](client)
-- Backend API: [server](server)
-- Deployment blueprint: [render.yaml](render.yaml)
+| Resource | Path |
+|----------|------|
+| Frontend (Vite + React) | [`client/`](client) |
+| Backend (Express API) | [`server/`](server) |
+| Deployment blueprint | [`render.yaml`](render.yaml) |

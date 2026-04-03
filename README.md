@@ -8,10 +8,9 @@ This workspace now contains a full implementation of the ExitPrep+ web platform 
 - AI: Hugging Face inference API (`/api/ai/dashboard`)
 - File hosting: Cloudinary-ready upload pipeline
 
-## Project Structure
+##Project Structure
 - `client` - dashboard, study notes, practice questions, admin panel
 - `server` - auth, resources, questions, exams, AI analytics APIs
-
 ## Backend Setup
 1. Go to `server`.
 2. Copy `.env.example` to `.env`.
@@ -19,14 +18,12 @@ This workspace now contains a full implementation of the ExitPrep+ web platform 
 4. Install and run:
    - `npm install`
    - `npm run dev`
-
 ## Frontend Setup
 1. Go to `client`.
 2. Copy `.env.example` to `.env`.
 3. Install and run:
    - `npm install`
    - `npm run dev`
-
 ## Deployment (Recommended: Render Free)
 Render is the best free option for this project because it supports both a Node API and static frontend hosting from one repo.
 

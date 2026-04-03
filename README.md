@@ -11,7 +11,6 @@ This workspace now contains a full implementation of the ExitPrep+ web platform 
 ##Project Structure
 - `client` - dashboard, study notes, practice questions, admin panel
 - `server` - auth, resources, questions, exams, AI analytics APIs
-
 ## Backend Setup
 1. Go to `server`.
 2. Copy `.env.example` to `.env`.

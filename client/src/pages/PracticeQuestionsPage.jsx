@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { ArrowRight, Search, Share2 } from "lucide-react";
+import { useTheme } from "../context/ThemeContext";
 
 const questionTopics = [
   {
@@ -110,6 +111,7 @@ const questionTopics = [
 ];
 
 function PracticeQuestionsPage() {
+  const { isDark } = useTheme();
   const [search, setSearch] = useState("");
 
   const filteredTopics = useMemo(
@@ -122,12 +124,50 @@ function PracticeQuestionsPage() {
     [search]
   );
 
+  const palette = isDark
+    ? {
+        title: "text-white",
+        description: "text-slate-400",
+        divider: "border-white/10",
+        searchInput:
+          "border-white/10 bg-white/5 text-slate-200 placeholder:text-slate-500 focus:border-white/25",
+        listWrap: "border-white/10 bg-[#0d1326]",
+        rowDivider: "border-white/10",
+        dotInactive: "bg-slate-600",
+        dotActive: "bg-blue-500",
+        topicTitle: "text-slate-50",
+        topicDescription: "text-slate-400",
+        shareButton:
+          "border-white/10 bg-white/5 text-slate-300 group-hover:border-white/20 group-hover:bg-white/10",
+        ratio: "text-slate-400",
+        arrowButton: "border-white/10 text-slate-500",
+        emptyText: "text-slate-500"
+      }
+    : {
+        title: "text-slate-900",
+        description: "text-slate-600",
+        divider: "border-slate-200",
+        searchInput:
+          "border-slate-300 bg-white text-slate-800 placeholder:text-slate-400 focus:border-slate-500",
+        listWrap: "border-slate-200 bg-white",
+        rowDivider: "border-slate-200",
+        dotInactive: "bg-slate-300",
+        dotActive: "bg-sky-500",
+        topicTitle: "text-slate-900",
+        topicDescription: "text-slate-500",
+        shareButton:
+          "border-slate-300 bg-slate-50 text-slate-600 group-hover:border-slate-400 group-hover:bg-slate-100",
+        ratio: "text-slate-600",
+        arrowButton: "border-slate-300 text-slate-500",
+        emptyText: "text-slate-500"
+      };
+
   return (
     <section className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-4 border-b border-white/10 pb-6">
+      <div className={`flex flex-wrap items-start justify-between gap-4 border-b pb-6 ${palette.divider}`}>
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">Questions</h1>
-          <p className="mt-1 text-sm sm:text-base text-slate-400">
+          <h1 className={`text-2xl sm:text-3xl font-bold tracking-tight ${palette.title}`}>Questions</h1>
+          <p className={`mt-1 text-sm sm:text-base ${palette.description}`}>
             Practice with real national exit exam questions to verify and increase your subject mastery.
           </p>
         </div>
@@ -141,43 +181,43 @@ function PracticeQuestionsPage() {
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Search..."
-            className="w-full rounded-xl border border-white/10 bg-white/5 py-2.5 pl-10 pr-3 text-sm text-slate-200 outline-none placeholder:text-slate-500 focus:border-white/25"
+            className={`w-full rounded-xl border py-2.5 pl-10 pr-3 text-sm outline-none ${palette.searchInput}`}
           />
         </label>
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-white/10 bg-[#0d1326]">
+      <div className={`overflow-hidden rounded-2xl border ${palette.listWrap}`}>
         {filteredTopics.map((topic, index) => (
           <div
             key={topic.id}
-            className="group flex flex-wrap items-center gap-3 border-b border-white/10 px-4 py-4 sm:px-5 sm:py-5 last:border-b-0"
+            className={`group flex flex-wrap items-center gap-3 border-b px-4 py-4 sm:px-5 sm:py-5 last:border-b-0 ${palette.rowDivider}`}
           >
             <div
               className={[
                 "h-2.5 w-2.5 shrink-0 rounded-full",
-                index === 2 ? "bg-blue-500" : "bg-slate-600"
+                index === 2 ? palette.dotActive : palette.dotInactive
               ].join(" ")}
             />
 
             <div className="min-w-0 flex-1 basis-full sm:basis-auto">
-              <p className="truncate text-lg sm:text-xl font-semibold tracking-tight text-slate-50">{topic.title}</p>
-              <p className="mt-1 truncate text-sm sm:text-base text-slate-400">{topic.description}</p>
+              <p className={`truncate text-lg sm:text-xl font-semibold tracking-tight ${palette.topicTitle}`}>{topic.title}</p>
+              <p className={`mt-1 truncate text-sm sm:text-base ${palette.topicDescription}`}>{topic.description}</p>
             </div>
 
             <button
               type="button"
-              className="grid h-9 w-9 sm:h-10 sm:w-10 place-items-center rounded-xl border border-white/10 bg-white/5 text-slate-300 transition group-hover:border-white/20 group-hover:bg-white/10"
+              className={`grid h-9 w-9 sm:h-10 sm:w-10 place-items-center rounded-xl border transition ${palette.shareButton}`}
             >
               <Share2 size={16} />
             </button>
 
-            <p className="w-16 sm:w-20 text-center text-base sm:text-lg font-medium text-slate-400">
+            <p className={`w-16 sm:w-20 text-center text-base sm:text-lg font-medium ${palette.ratio}`}>
               {topic.completed}/{topic.total}
             </p>
 
             <button
               type="button"
-              className="rounded-full border border-white/10 p-2 text-slate-500"
+              className={`rounded-full border p-2 ${palette.arrowButton}`}
               aria-label={`Open ${topic.title}`}
             >
               <ArrowRight size={16} />
@@ -186,7 +226,7 @@ function PracticeQuestionsPage() {
         ))}
       </div>
 
-      {filteredTopics.length === 0 ? <p className="text-sm text-slate-500">No questions matched your search.</p> : null}
+      {filteredTopics.length === 0 ? <p className={`text-sm ${palette.emptyText}`}>No questions matched your search.</p> : null}
     </section>
   );
 }

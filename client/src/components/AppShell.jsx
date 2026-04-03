@@ -1,4 +1,4 @@
-import { BarChart3, BookOpen, ChevronLeft, CircleHelp, LayoutGrid, LogOut, Moon, Network, Rocket, ShieldCheck, Sun, UserRound } from "lucide-react";
+import { BarChart3, BookOpen, ChevronLeft, CircleHelp, LayoutGrid, LogOut, Moon, Network, ShieldCheck, Sparkles, Sun, UserRound } from "lucide-react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
@@ -12,7 +12,7 @@ const studentItems = [
 const adminItems = [{ to: "/app/admin", label: "Admin Panel", icon: ShieldCheck }];
 
 const guidanceItems = [
-  { to: "/app/study-notes", label: "Guide", icon: CircleHelp }
+  { to: "/app/ai-assistant", label: "AI Assistant", icon: Sparkles }
 ];
 
 function NavSection({ title, items, isDark }) {

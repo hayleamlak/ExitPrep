@@ -10,6 +10,7 @@ import AdminPanelPage from "./pages/AdminPanelPage";
 import ProfilePage from "./pages/ProfilePage";
 import SignInPage from "./pages/SignInPage";
 import SignUpPage from "./pages/SignUpPage";
+import AIAssistantPage from "./pages/AIAssistantPage";
 
 function defaultRouteForRole(role) {
   return role === "admin" ? "/app/admin" : "/app/study-notes";
@@ -72,6 +73,7 @@ function App() {
             <Route path="dashboard" element={<DashboardPage />} />
             <Route path="study-notes" element={<StudyNotesPage />} />
             <Route path="practice-questions" element={<PracticeQuestionsPage />} />
+            <Route path="ai-assistant" element={<AIAssistantPage />} />
             <Route path="profile" element={<ProfilePage />} />
             <Route
               path="admin"

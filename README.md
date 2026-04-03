@@ -19,7 +19,6 @@ This workspace now contains a full implementation of the ExitPrep+ web platform 
 4. Install and run:
    - `npm install`
    - `npm run dev`
-
 ## Frontend Setup
 1. Go to `client`.
 2. Copy `.env.example` to `.env`.

@@ -38,7 +38,8 @@ async function register(req, res) {
         id: user._id,
         name: user.name,
         email: user.email,
-        role: user.role
+        role: user.role,
+        isSuspended: user.isSuspended
       }
     });
   } catch (error) {
@@ -65,6 +66,10 @@ async function login(req, res) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
+    if (user.isSuspended) {
+      return res.status(403).json({ message: "This account is suspended. Contact admin support." });
+    }
+
     const token = signToken(user);
     return res.json({
       token,
@@ -72,7 +77,8 @@ async function login(req, res) {
         id: user._id,
         name: user.name,
         email: user.email,
-        role: user.role
+        role: user.role,
+        isSuspended: user.isSuspended
       }
     });
   } catch (error) {

@@ -1,5 +1,5 @@
 import { BarChart3, BookOpen, ChevronLeft, CircleHelp, LayoutGrid, LogOut, Moon, Network, Rocket, ShieldCheck, Sun, UserRound } from "lucide-react";
-import { NavLink, Outlet } from "react-router-dom";
+import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 
@@ -55,7 +55,9 @@ function NavSection({ title, items, isDark }) {
 function AppShell() {
   const { user, signOut } = useAuth();
   const { theme, toggleTheme, isDark } = useTheme();
+  const location = useLocation();
   const isAdmin = user?.role === "admin";
+  const hideSidebar = location.pathname.startsWith("/app/admin");
   const userInitial = (user?.name || user?.email || "U").slice(0, 1).toUpperCase();
   const navigationItems = isAdmin ? [...studentItems, ...adminItems] : studentItems;
 
@@ -93,7 +95,7 @@ function AppShell() {
   return (
     <div className={`min-h-screen ${shellClasses.page}`}>
       <div className="mx-auto w-full max-w-[1700px] p-3 sm:p-4">
-        <aside className={`hidden rounded-[28px] border p-5 lg:fixed lg:bottom-4 lg:left-4 lg:top-4 lg:block lg:w-[300px] lg:overflow-y-auto ${shellClasses.sidebar}`}>
+        <aside className={`hidden rounded-[28px] border p-5 lg:fixed lg:bottom-4 lg:left-4 lg:top-4 lg:block lg:w-[300px] lg:overflow-y-auto ${hideSidebar ? "lg:hidden" : ""} ${shellClasses.sidebar}`}>
           <div className="flex items-center gap-3">
             <div className={`grid h-10 w-10 place-items-center rounded-full border ${shellClasses.logoWrap}`}>
               <Network size={18} />
@@ -138,7 +140,7 @@ function AppShell() {
           </div>
         </aside>
 
-        <div className="min-w-0 lg:ml-[320px] lg:pl-4">
+        <div className={`min-w-0 ${hideSidebar ? "" : "lg:ml-[320px] lg:pl-4"}`}>
           <header className={`mb-3 flex items-center gap-3 rounded-2xl border px-3 py-2.5 backdrop-blur sm:px-4 sm:py-3 ${shellClasses.topBar}`}>
             <button
               type="button"

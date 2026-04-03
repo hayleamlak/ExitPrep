@@ -24,9 +24,9 @@ async function createResource(req, res) {
     const { title, course, department, year, fileUrl, tags, rating } = req.body;
 
     const resolvedUrl = (req.file && req.file.path) || fileUrl;
-    if (!title || !course || !department || !year || !resolvedUrl) {
+    if (!course || !resolvedUrl) {
       return res.status(400).json({
-        message: "title, course, department, year, and fileUrl/file upload are required"
+        message: "course and fileUrl/file upload are required"
       });
     }
 
@@ -35,11 +35,15 @@ async function createResource(req, res) {
       ? Math.max(0, Math.min(5, parsedRating))
       : 4.6;
 
+    const normalizedTitle = typeof title === "string" && title.trim() ? title.trim() : course.trim();
+    const normalizedDepartment = typeof department === "string" && department.trim() ? department.trim() : "General";
+    const normalizedYear = typeof year === "string" && year.trim() ? year.trim() : "N/A";
+
     const resource = await Resource.create({
-      title,
-      course,
-      department,
-      year,
+      title: normalizedTitle,
+      course: course.trim(),
+      department: normalizedDepartment,
+      year: normalizedYear,
       fileUrl: resolvedUrl,
       rating: normalizedRating,
       tags: Array.isArray(tags) ? tags : typeof tags === "string" ? tags.split(",").map((t) => t.trim()).filter(Boolean) : [],

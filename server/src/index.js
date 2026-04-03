@@ -9,6 +9,7 @@ const resourceRoutes = require("./routes/resourceRoutes");
 const questionRoutes = require("./routes/questionRoutes");
 const examRoutes = require("./routes/examRoutes");
 const aiRoutes = require("./routes/aiRoutes");
+const adminRoutes = require("./routes/adminRoutes");
 
 const app = express();
 
@@ -32,6 +33,7 @@ app.use("/api/resources", resourceRoutes);
 app.use("/api/questions", questionRoutes);
 app.use("/api/exams", examRoutes);
 app.use("/api/ai", aiRoutes);
+app.use("/api/admin", adminRoutes);
 
 app.use((err, _req, res, _next) => {
   console.error(err);

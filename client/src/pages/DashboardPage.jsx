@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { AlertTriangle, Clock3, Filter, TrendingDown, TrendingUp } from "lucide-react";
+import { AlertTriangle, Clock3, Filter, Sparkles, TrendingDown, TrendingUp } from "lucide-react";
 import api from "../services/api";
 import { useTheme } from "../context/ThemeContext";
 
@@ -61,6 +61,11 @@ function DashboardPage() {
   const [insights, setInsights] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [aiRecommendation, setAiRecommendation] = useState("");
+  const [aiWeakSubjects, setAiWeakSubjects] = useState([]);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState("");
+  const [aiLastGeneratedAt, setAiLastGeneratedAt] = useState("");
 
   const palette = isDark
     ? {
@@ -144,9 +149,38 @@ function DashboardPage() {
 
   const weakTopics = Array.isArray(insights?.weakAreas) ? insights.weakAreas : [];
   const recentAttempts = Array.isArray(insights?.recentAttempts) ? insights.recentAttempts : [];
+  const aiSubjectScores = useMemo(() => {
+    const groupedTopics = Array.isArray(insights?.groupedByTopic) ? insights.groupedByTopic : [];
+
+    return groupedTopics.reduce((acc, item) => {
+      const topic = typeof item?.topic === "string" && item.topic.trim() ? item.topic.trim() : "General";
+      const scoreOutOfFive = Number((clamp(item?.accuracyPercentage, 0, 100) / 20).toFixed(2));
+      acc[topic] = scoreOutOfFive;
+      return acc;
+    }, {});
+  }, [insights]);
 
   const currentCourseLabel =
     selectedCourse === "all" ? "All courses" : selectedCourse;
+
+  const generateAiRecommendation = async () => {
+    setAiLoading(true);
+    setAiError("");
+
+    try {
+      const response = await api.post("/ai/dashboard", {
+        subjectScores: aiSubjectScores
+      });
+
+      setAiRecommendation(typeof response.data?.recommendation === "string" ? response.data.recommendation : "No recommendation returned.");
+      setAiWeakSubjects(Array.isArray(response.data?.weakSubjects) ? response.data.weakSubjects : []);
+      setAiLastGeneratedAt(new Date().toISOString());
+    } catch (err) {
+      setAiError(err.response?.data?.message || "Failed to generate AI recommendation.");
+    } finally {
+      setAiLoading(false);
+    }
+  };
 
   return (
     <section className="space-y-6">
@@ -182,6 +216,48 @@ function DashboardPage() {
 
       {loading ? <p className={`text-sm ${palette.meta}`}>Loading insights...</p> : null}
       {error ? <p className={`rounded-xl border px-3 py-2 text-sm ${palette.bad} ${palette.card} ${palette.cardBorder}`}>{error}</p> : null}
+
+      <article className={`rounded-[26px] border p-5 sm:p-6 ${palette.card} ${palette.cardBorder}`}>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <Sparkles size={18} className={palette.accent} />
+            <div>
+              <p className={`text-xs font-semibold uppercase tracking-[0.25em] ${palette.meta}`}>AI Coach</p>
+              <h2 className={`mt-2 text-xl font-bold ${palette.title}`}>Personalized study plan</h2>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={generateAiRecommendation}
+            disabled={aiLoading}
+            className={`rounded-xl border px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-70 ${palette.chip}`}
+          >
+            {aiLoading ? "Generating..." : aiRecommendation ? "Regenerate Plan" : "Generate Plan"}
+          </button>
+        </div>
+
+        {aiError ? <p className={`mt-4 rounded-xl border px-3 py-2 text-sm ${palette.bad} ${palette.card} ${palette.cardBorder}`}>{aiError}</p> : null}
+
+        {aiRecommendation ? (
+          <div className="mt-4 space-y-3">
+            <p className={`whitespace-pre-wrap text-sm leading-relaxed ${palette.meta}`}>{aiRecommendation}</p>
+            {aiWeakSubjects.length ? (
+              <div className="flex flex-wrap gap-2">
+                {aiWeakSubjects.map((subject) => (
+                  <span key={subject} className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${palette.chip}`}>
+                    {subject}
+                  </span>
+                ))}
+              </div>
+            ) : null}
+            {aiLastGeneratedAt ? <p className={`text-xs ${palette.meta}`}>Generated at {formatDate(aiLastGeneratedAt)}</p> : null}
+          </div>
+        ) : (
+          <p className={`mt-4 text-sm ${palette.meta}`}>
+            Generate an AI study plan based on your current topic performance and weak areas.
+          </p>
+        )}
+      </article>
 
       {!loading && !error ? (
         <div className="space-y-6">

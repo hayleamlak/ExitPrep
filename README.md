@@ -1,238 +1,157 @@
-# ExitPrep Ethiopia
+# ExitPrep AI Coach
 
-Web platform for Ethiopian university students to prepare for exit exams.
+AI-powered study planning for Ethiopian university exit exam preparation.
 
-ExitPrep centralizes study resources, assessment practice, progress analytics, and AI-powered support in one platform designed for both students and administrators.
+This README is focused on the AI feature: what it does, how to use it, how it is wired, and how to configure it.
 
-## Description
+## What The AI Feature Does
 
-ExitPrep Ethiopia helps students prepare for Ethiopian University Exit Exams through:
+- Generates a personalized weekly study plan from student performance data
+- Detects weak subjects/topics and prioritizes them in recommendations
+- Works from real attempt history and course/topic accuracy
+- Supports regeneration so students can refresh advice after new practice
+- Falls back to deterministic recommendations when external AI is unavailable
 
-- Centralized study materials and downloadable resources
-- Practice questions grouped by category and department
-- Course-based performance tracking and weak-topic detection
-- Role-based admin controls for managing content and users
-- AI-assisted learning support for summaries and recommendations
+## Where To Access It
 
-Primary goals:
+In the web app:
 
-1. Improve access to quality exam preparation content
-2. Provide measurable progress and readiness insights
-3. Enable scalable content management for institutions/admin teams
+1. Sign in as a student
+2. Go to Workspace -> Insights
+3. Find AI Coach section
+4. Click Generate Plan
 
-## Key Features
+The UI returns:
 
-### Student Experience
+- Recommendation text
+- Weak-subject chips
+- Generation timestamp
 
-- Public homepage with modern landing page
-- Sign up/sign in with protected routes
-- Study notes page
-- Practice questions with category-based modes:
-  - EUEE Simulation
-  - Official Exams (Past Exam)
-  - Custom Department Questions
-- Dashboard/Insights page with dynamic performance metrics
-- Profile page with account and preference controls
-- Light and dark theme support
-- Responsive mobile and desktop layout
+## AI Architecture
 
-### Admin Experience
+Frontend:
 
-- Role-based admin panel
-- Upload resources (PDF workflow)
-- JSON-based question import with category selection dropdown
-- Category filtering and structured question management
-- User management (roles, suspension, activity snapshot)
-- Analytics overview and moderation scaffolding
+- Dashboard UI triggers AI recommendation request
+- Sends subjectScores derived from topic accuracy
+- Renders returned recommendation and weak subjects
 
-### AI Support
+Backend:
 
-- AI summary and recommendation integration
-- Weak-topic recommendation pipeline
-- Activity tracking support for personalized insights
+- Route: POST /api/ai/dashboard
+- Controller computes subject scores and weak subjects
+- Service calls Hugging Face model (if configured)
+- Response is persisted in analytics collection and returned to UI
 
-## Tech Stack
+Fallback behavior:
 
-- Frontend: React, Vite, Tailwind CSS, React Router
-- Backend: Node.js, Express
-- Database: MongoDB, Mongoose
-- Authentication: JWT
-- AI: Hugging Face or OpenAI-compatible integration
-- File Handling: Multer, Cloudinary pipeline
-- Deployment: Render blueprint with [render.yaml](render.yaml)
+- If HUGGING_FACE_API_KEY is missing or model call fails, backend returns a useful local recommendation
+- Students still get actionable AI Coach output without external API dependency
 
-## Project Structure
+## AI API Reference
 
-- [client](client): Frontend application (student and admin interfaces)
-- [server](server): Backend APIs, auth, resources, questions, insights, AI routes
-- [render.yaml](render.yaml): Deployment blueprint for Render services
+### POST /api/ai/dashboard
 
-## Screenshots / Demo
+Purpose:
 
-### Home
+- Generate personalized recommendation for current student (or admin-selected student)
 
-Add homepage screenshot here:
+Auth:
 
-![Home Placeholder](https://via.placeholder.com/1280x720?text=ExitPrep+Home+Preview)
+- Required (JWT)
 
-### Optional Additional Screens
+Request body (typical):
 
-- Student Dashboard
-- Questions Category Selection
-- Admin Upload Panel
+```json
+{
+  "subjectScores": {
+    "Object Oriented Programming": 2.8,
+    "Database Systems": 3.6
+  }
+}
+```
 
-## Getting Started
+Response (typical):
 
-### Prerequisites
+```json
+{
+  "studentId": "...",
+  "weakSubjects": ["Object Oriented Programming"],
+  "subjectScores": {
+    "Object Oriented Programming": 2.8,
+    "Database Systems": 3.6
+  },
+  "recommendation": "Focus this week on Object Oriented Programming...",
+  "analyticsId": "..."
+}
+```
 
-- Node.js 18+
-- npm 9+
-- MongoDB instance (local or cloud)
+### POST /api/ai/activity
 
-### Backend Setup
+Purpose:
 
-1. Open terminal in [server](server)
-2. Create environment file based on your template
-3. Install dependencies
-4. Start development server
+- Append student activity used by AI and analytics pipelines
 
-Commands:
+Auth:
 
-    npm install
-    npm run dev
+- Required (JWT)
 
-### Frontend Setup
+## Environment Variables (AI)
 
-1. Open terminal in [client](client)
-2. Create environment file for frontend variables
-3. Install dependencies
-4. Start development server
-
-Commands:
-
-    npm install
-    npm run dev
-
-## Environment Variables
-
-### Backend (server)
+Backend variables:
 
 - MONGODB_URI
 - JWT_SECRET
-- HUGGING_FACE_API_KEY (or equivalent AI key)
-- CLOUDINARY_CLOUD_NAME
-- CLOUDINARY_API_KEY
-- CLOUDINARY_API_SECRET
+- HUGGING_FACE_API_KEY (optional)
+- HUGGING_FACE_MODEL (optional, default: google/flan-t5-small)
 
-### Frontend (client)
+Frontend variables:
 
-- VITE_API_URL
+- VITE_API_URL (example: http://localhost:5000/api)
 
-Example value:
+## Local Setup (AI-Focused)
 
-    http://localhost:5000/api
+Backend:
 
-## API Overview
+```bash
+cd server
+npm install
+npm run dev
+```
 
-### Authentication
+Frontend:
 
-- POST /api/auth/register
-- POST /api/auth/login
+```bash
+cd client
+npm install
+npm run dev
+```
 
-### Questions
+After startup:
 
-- GET /api/questions
-- POST /api/questions (admin)
-- POST /api/questions/bulk (admin, JSON import)
+1. Log in
+2. Open Insights
+3. Click Generate Plan in AI Coach
 
-Filtering supports category-based queries:
+## AI Troubleshooting
 
-- category=simulation
-- category=past
-- category=custom
+AI Coach not visible:
 
-### Resources
+- Open Workspace -> Insights
+- Refresh client after pull/build changes
 
-- GET /api/resources
-- POST /api/resources (admin)
+Recommendation request fails:
 
-### Exams
+- Verify VITE_API_URL points to backend
+- Verify JWT auth/session is valid
+- Check backend logs for /api/ai/dashboard errors
 
-- GET /api/exams
-- POST /api/exams (admin)
+Generic recommendation returned:
 
-### Insights and Attempts
+- Expected when HUGGING_FACE_API_KEY is not set
+- Set API key to enable model-generated output
 
-- GET /api/attempts/courses
-- GET /api/attempts/insights
-- POST /api/attempts
-- POST /api/attempts/bulk
+## Minimal Project Links
 
-### AI
-
-- POST /api/ai/dashboard
-- POST /api/ai/activity
-
-## JSON Question Upload Format
-
-Upload as a JSON array of question objects.
-
-Required fields per question:
-
-- category: simulation, past, or custom
-- courseName
-- questionText
-- options (exactly 4 values)
-- correctAnswer
-- explanation
-
-Optional fields:
-
-- examYear
-- difficulty
-
-Example:
-
-    [
-      {
-        "category": "simulation",
-        "courseName": "Database Systems",
-        "questionText": "What is a primary key?",
-        "options": ["A", "B", "C", "D"],
-        "correctAnswer": "A",
-        "explanation": "A primary key uniquely identifies each row."
-      }
-    ]
-
-## Deployment
-
-Recommended deployment target: Render.
-
-1. Push repository to GitHub
-2. Create new Render Blueprint
-3. Connect repository
-4. Render reads [render.yaml](render.yaml) and provisions services
-5. Set backend and frontend environment variables
-6. Redeploy frontend after VITE_API_URL is configured
-
-## Roadmap
-
-- Department-level exam blueprints
-- Adaptive quiz generation based on weak topics
-- Time-based test simulation mode
-- Better analytics visualizations and longitudinal trends
-- Institution dashboards for cohort-level monitoring
-
-## Contribution
-
-Contributions are welcome.
-
-Recommended process:
-
-1. Create feature branch
-2. Commit focused changes
-3. Open pull request with clear summary and screenshots
-
-## License
-
-Add your preferred license here (for example MIT).
+- Frontend app: [client](client)
+- Backend API: [server](server)
+- Deployment blueprint: [render.yaml](render.yaml)

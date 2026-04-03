@@ -12,8 +12,7 @@ const studentItems = [
 const adminItems = [{ to: "/app/admin", label: "Admin Panel", icon: ShieldCheck }];
 
 const guidanceItems = [
-  { to: "/app/dashboard", label: "Insights", icon: Rocket },
-  { to: "/app/dashboard", label: "Guide", icon: CircleHelp }
+  { to: "/app/study-notes", label: "Guide", icon: CircleHelp }
 ];
 
 function NavSection({ title, items, isDark }) {

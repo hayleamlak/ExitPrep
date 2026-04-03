@@ -1,0 +1,210 @@
+[
+  {
+    "category": "simulation",
+    "courseName": "Object Oriented Programming",
+    "questionText": "Which translator translates individual steps in a high-level program one at a time rather than the whole program?",
+    "options": [
+      "Interpreter",
+      "Assembler",
+      "Compiler",
+      "JVM"
+    ],
+    "correctAnswer": "Interpreter",
+    "explanation": "An interpreter translates and executes code line by line."
+  },
+  {
+    "category": "simulation",
+    "courseName": "Object Oriented Programming",
+    "questionText": "It is based on commands that update variables and control flow explicitly.",
+    "options": [
+      "Imperative or procedural",
+      "Declarative",
+      "Logical",
+      "Functional"
+    ],
+    "correctAnswer": "Imperative or procedural",
+    "explanation": "Imperative programming uses statements to change program state."
+  },
+  {
+    "category": "simulation",
+    "courseName": "Object Oriented Programming",
+    "questionText": "What is a procedure-oriented language?",
+    "options": [
+      "Supports all OOP features",
+      "Supports encapsulation",
+      "Consists of writing a list of instructions",
+      "Does not support inheritance"
+    ],
+    "correctAnswer": "Consists of writing a list of instructions",
+    "explanation": "Procedure-oriented languages focus on step-by-step instructions."
+  },
+  {
+    "category": "simulation",
+    "courseName": "Object Oriented Programming",
+    "questionText": "Which one is false about Java features?",
+    "options": [
+      "Platform-independent",
+      "Simple",
+      "Centralized",
+      "Portable"
+    ],
+    "correctAnswer": "Centralized",
+    "explanation": "Java is not centralized; it is distributed and platform-independent."
+  },
+  {
+    "category": "simulation",
+    "courseName": "Object Oriented Programming",
+    "questionText": "Which one is not a valid Java identifier?",
+    "options": [
+      "intab",
+      "_ab",
+      "All are possible",
+      "a-bc"
+    ],
+    "correctAnswer": "a-bc",
+    "explanation": "Hyphens are not allowed in Java identifiers."
+  },
+  {
+    "category": "simulation",
+    "courseName": "Object Oriented Programming",
+    "questionText": "Which is true about Java platform?",
+    "options": [
+      "JRE is superset of JDK",
+      "JRE = JVM + libraries",
+      "JDK is superset of JRE",
+      "All are correct"
+    ],
+    "correctAnswer": "All are correct",
+    "explanation": "JDK includes JRE, and JRE includes JVM and libraries."
+  },
+  {
+    "category": "simulation",
+    "courseName": "Object Oriented Programming",
+    "questionText": "Casting from larger range to smaller range is called?",
+    "options": [
+      "Narrowing",
+      "Widening",
+      "Explicit casting",
+      "Implicit casting"
+    ],
+    "correctAnswer": "Narrowing",
+    "explanation": "Narrowing reduces the range and may lose data."
+  },
+  {
+    "category": "simulation",
+    "courseName": "Object Oriented Programming",
+    "questionText": "int x=3; y=(x>0)?5:6; What is y?",
+    "options": [
+      "5",
+      "0",
+      "6",
+      "None"
+    ],
+    "correctAnswer": "5",
+    "explanation": "Condition is true, so y = 5."
+  },
+  {
+    "category": "simulation",
+    "courseName": "Object Oriented Programming",
+    "questionText": "Which is not a feature of OOP?",
+    "options": [
+      "Efficient Code",
+      "Reusability",
+      "Modularity",
+      "Redundant data"
+    ],
+    "correctAnswer": "Redundant data",
+    "explanation": "OOP avoids redundancy."
+  },
+  {
+    "category": "simulation",
+    "courseName": "Object Oriented Programming",
+    "questionText": "First purely object-oriented language?",
+    "options": [
+      "Kotlin",
+      "SmallTalk",
+      "Java",
+      "C++"
+    ],
+    "correctAnswer": "SmallTalk",
+    "explanation": "SmallTalk is considered the first pure OOP language."
+  },
+  {
+    "category": "simulation",
+    "courseName": "Object Oriented Programming",
+    "questionText": "Which feature indicates code reusability?",
+    "options": [
+      "Abstraction",
+      "Polymorphism",
+      "Encapsulation",
+      "Inheritance"
+    ],
+    "correctAnswer": "Inheritance",
+    "explanation": "Inheritance allows reuse of code."
+  },
+  {
+    "category": "simulation",
+    "courseName": "Object Oriented Programming",
+    "questionText": "Which is not an OOP concept?",
+    "options": [
+      "Data hiding",
+      "Message passing",
+      "Platform independence",
+      "Data binding"
+    ],
+    "correctAnswer": "Platform independence",
+    "explanation": "Platform independence is not an OOP concept."
+  },
+  {
+    "category": "simulation",
+    "courseName": "Object Oriented Programming",
+    "questionText": "Correct syntax of inheritance in Java?",
+    "options": [
+      "class base extends derived",
+      "class derived extends base",
+      "class derived base",
+      "class base derived"
+    ],
+    "correctAnswer": "class derived extends base",
+    "explanation": "Java uses 'extends' keyword."
+  },
+  {
+    "category": "simulation",
+    "courseName": "Object Oriented Programming",
+    "questionText": "What is encapsulation?",
+    "options": [
+      "Combining data and functions into one unit",
+      "Combining only data",
+      "Combining only functions",
+      "None"
+    ],
+    "correctAnswer": "Combining data and functions into one unit",
+    "explanation": "Encapsulation binds data and methods together."
+  },
+  {
+    "category": "simulation",
+    "courseName": "Object Oriented Programming",
+    "questionText": "Which is true about polymorphism?",
+    "options": [
+      "Redefines functionality",
+      "Always increases overhead",
+      "Feature of OOP",
+      "Improves readability"
+    ],
+    "correctAnswer": "Feature of OOP",
+    "explanation": "Polymorphism is a core OOP concept."
+  },
+  {
+    "category": "simulation",
+    "courseName": "Object Oriented Programming",
+    "questionText": "Which layer handles routing in networks?",
+    "options": [
+      "Physical",
+      "Data link",
+      "Network",
+      "Application"
+    ],
+    "correctAnswer": "Network",
+    "explanation": "Routing is done at network layer."
+  }
+]

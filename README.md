@@ -25,7 +25,6 @@ This workspace now contains a full implementation of the ExitPrep+ web platform 
 3. Install and run:
    - `npm install`
    - `npm run dev`
-
 ## Deployment (Recommended: Render Free)
 Render is the best free option for this project because it supports both a Node API and static frontend hosting from one repo.
 

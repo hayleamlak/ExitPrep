@@ -6,6 +6,8 @@ This document covers the **AI Coach** feature: behavior, usage, architecture, co
 
 ---
 
+
+
 ## Table of contents
 
 | Section | Description |
@@ -40,6 +42,7 @@ This document covers the **AI Coach** feature: behavior, usage, architecture, co
 Goal: make AI features easy for students, predictable for developers, and safe to run in production.
 
 ### 1. Define one AI service layer in backend
+
 
 Backend:
 

@@ -40,6 +40,7 @@ Goal: make AI features easy for students, predictable for developers, and safe t
 
 ### 1. Define one AI service layer in backend
 
+
 Backend:
 
 1. Create one provider abstraction in server services, for example aiProvider.js.

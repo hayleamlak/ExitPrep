@@ -41,6 +41,20 @@ app.use("/api/attempts", attemptRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/notes", noteRoutes);
 
+app.get(/^\/(?!api).*/, (req, res) => {
+  const frontendUrl = String(process.env.FRONTEND_URL || "").trim();
+
+  if (!frontendUrl) {
+    res.status(404).json({
+      message: "Client route not found on API service. Open the frontend URL instead."
+    });
+    return;
+  }
+
+  const normalizedBase = frontendUrl.endsWith("/") ? frontendUrl.slice(0, -1) : frontendUrl;
+  res.redirect(302, `${normalizedBase}${req.originalUrl}`);
+});
+
 app.use((err, _req, res, _next) => {
   console.error(err);
 

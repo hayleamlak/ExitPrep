@@ -383,6 +383,7 @@ function AIAssistantPage() {
       <header className={`rounded-[26px] border p-5 sm:p-6 ${palette.card} ${palette.border}`}>
         <div className="flex items-start justify-between gap-4">
           <div>
+            
             <p className={`text-xs font-semibold uppercase tracking-[0.3em] ${palette.meta}`}>AI Hub</p>
             <h1 className={`mt-2 typo-page-title ${palette.title}`}>Smart PDF Note Summarizer</h1>
             <p className={`mt-2 max-w-3xl typo-page-subtitle ${palette.meta}`}>

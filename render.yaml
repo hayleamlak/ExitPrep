@@ -24,6 +24,8 @@ services:
         sync: false
       - key: CLOUDINARY_API_SECRET
         sync: false
+      - key: FRONTEND_URL
+        sync: false
 
   - type: static
     name: exitprep-web

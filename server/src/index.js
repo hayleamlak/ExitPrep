@@ -17,7 +17,7 @@ const noteRoutes = require("./routes/noteRoutes");
 const app = express();
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: "10mb" }));
 
 app.get("/", (_req, res) => {
   res.json({
@@ -43,7 +43,19 @@ app.use("/api/notes", noteRoutes);
 
 app.use((err, _req, res, _next) => {
   console.error(err);
-  res.status(500).json({ message: "Internal server error" });
+
+  if (err?.type === "entity.too.large") {
+    res.status(413).json({ message: "Request payload is too large. Reduce PDF content size." });
+    return;
+  }
+
+  const statusCode = Number.isInteger(err?.statusCode)
+    ? err.statusCode
+    : Number.isInteger(err?.status)
+      ? err.status
+      : 500;
+
+  res.status(statusCode).json({ message: err?.message || "Internal server error" });
 });
 
 const PORT = process.env.PORT || 5000;

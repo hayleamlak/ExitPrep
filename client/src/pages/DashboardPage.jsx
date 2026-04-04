@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { AlertTriangle, Clock3, Filter, Sparkles, TrendingDown, TrendingUp } from "lucide-react";
+import { AlertTriangle, BarChart3, Clock3, Filter, Sparkles, TrendingDown, TrendingUp } from "lucide-react";
 import api from "../services/api";
 import { useTheme } from "../context/ThemeContext";
 
@@ -54,6 +54,210 @@ function TopicBar({ item, palette, isWeak = false }) {
   );
 }
 
+function LineTrendChart({ points, palette }) {
+  const width = 560;
+  const height = 220;
+  const chartPadding = {
+    top: 18,
+    right: 16,
+    bottom: 48,
+    left: 44
+  };
+  const [hoveredPoint, setHoveredPoint] = useState(null);
+
+  if (!points.length) {
+    return <p className={`text-sm ${palette.meta}`}>Not enough attempt data for trend chart.</p>;
+  }
+
+  const maxValue = 100;
+  const chartWidth = width - chartPadding.left - chartPadding.right;
+  const chartHeight = height - chartPadding.top - chartPadding.bottom;
+  const yTicks = [0, 25, 50, 75, 100];
+
+  const path = points
+    .map((point, index) => {
+      const x = chartPadding.left + (index * chartWidth) / Math.max(points.length - 1, 1);
+      const y = chartPadding.top + chartHeight - (point.value / maxValue) * chartHeight;
+      return `${index === 0 ? "M" : "L"}${x},${y}`;
+    })
+    .join(" ");
+
+  return (
+    <div className="relative">
+      {hoveredPoint ? (
+        <div
+          className={`pointer-events-none absolute z-10 rounded-lg border px-2 py-1 text-xs shadow ${palette.card} ${palette.cardBorder}`}
+          style={{ left: `${hoveredPoint.left}%`, top: "-8px", transform: "translate(-50%, -100%)" }}
+        >
+          <p className={palette.title}>{hoveredPoint.label}</p>
+          <p className={palette.meta}>{Math.round(hoveredPoint.value)}% accuracy</p>
+        </div>
+      ) : null}
+      <svg viewBox={`0 0 ${width} ${height}`} className="h-44 w-full">
+        <rect x="0" y="0" width={width} height={height} fill="transparent" />
+
+        <line
+          x1={chartPadding.left}
+          y1={chartPadding.top + chartHeight}
+          x2={chartPadding.left + chartWidth}
+          y2={chartPadding.top + chartHeight}
+          stroke="currentColor"
+          strokeWidth="1"
+          className={palette.meta}
+        />
+        <line
+          x1={chartPadding.left}
+          y1={chartPadding.top}
+          x2={chartPadding.left}
+          y2={chartPadding.top + chartHeight}
+          stroke="currentColor"
+          strokeWidth="1"
+          className={palette.meta}
+        />
+
+        {yTicks.map((tick) => {
+          const y = chartPadding.top + chartHeight - (tick / 100) * chartHeight;
+          return (
+            <g key={`y-${tick}`}>
+              <line
+                x1={chartPadding.left - 4}
+                y1={y}
+                x2={chartPadding.left + chartWidth}
+                y2={y}
+                stroke="currentColor"
+                strokeWidth="0.5"
+                className={palette.meta}
+                opacity="0.25"
+              />
+              <text
+                x={chartPadding.left - 8}
+                y={y + 4}
+                textAnchor="end"
+                fontSize="10"
+                className={palette.meta}
+                fill="currentColor"
+              >
+                {tick}
+              </text>
+            </g>
+          );
+        })}
+
+        <path d={path} fill="none" stroke="currentColor" strokeWidth="3" className={palette.accent} />
+        {points.map((point, index) => {
+          const x = chartPadding.left + (index * chartWidth) / Math.max(points.length - 1, 1);
+          const y = chartPadding.top + chartHeight - (point.value / maxValue) * chartHeight;
+
+          return (
+            <g key={`${point.label}-${index}`}>
+              <circle
+                cx={x}
+                cy={y}
+                r={hoveredPoint?.index === index ? "6" : "4"}
+                className={palette.good}
+                fill="currentColor"
+                onMouseEnter={() => {
+                  const left = ((x / width) * 100);
+                  setHoveredPoint({ index, left, label: point.label, value: point.value });
+                }}
+                onMouseLeave={() => setHoveredPoint(null)}
+              >
+                <title>{`${point.label}: ${Math.round(point.value)}% accuracy`}</title>
+              </circle>
+              <text
+                x={x}
+                y={chartPadding.top + chartHeight + 14}
+                textAnchor="middle"
+                fontSize="10"
+                className={palette.meta}
+                fill="currentColor"
+              >
+                {point.label}
+              </text>
+            </g>
+          );
+        })}
+
+        <text
+          x={chartPadding.left + chartWidth / 2}
+          y={height - 6}
+          textAnchor="middle"
+          fontSize="11"
+          className={palette.meta}
+          fill="currentColor"
+        >
+          X-axis: Quiz sets over time
+        </text>
+        <text
+          x="14"
+          y={chartPadding.top + chartHeight / 2}
+          textAnchor="middle"
+          fontSize="11"
+          className={palette.meta}
+          fill="currentColor"
+          transform={`rotate(-90 14 ${chartPadding.top + chartHeight / 2})`}
+        >
+          Y-axis: Accuracy (%)
+        </text>
+      </svg>
+      <div className="mt-2 flex flex-wrap gap-2">
+        {points.map((point) => (
+          <span key={point.label} className={`rounded-full border px-2 py-0.5 text-xs ${palette.chip}`}>
+            {point.label}: {Math.round(point.value)}%
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ActivityChart({ items, palette }) {
+  const [hoveredDay, setHoveredDay] = useState("");
+
+  if (!items.length) {
+    return <p className={`text-sm ${palette.meta}`}>No activity yet.</p>;
+  }
+
+  const maxAttempts = Math.max(...items.map((item) => item.attempts), 1);
+
+  return (
+    <div>
+      <p className={`mb-2 text-xs ${palette.meta}`}>Y-axis: Attempts volume</p>
+      <div className="space-y-2">
+      {items.map((item) => {
+        const width = `${Math.round((item.attempts / maxAttempts) * 100)}%`;
+        const isHovered = hoveredDay === item.day;
+
+        return (
+          <div
+            key={item.day}
+            onMouseEnter={() => setHoveredDay(item.day)}
+            onMouseLeave={() => setHoveredDay("")}
+            className={`rounded-lg px-2 py-1 transition ${isHovered ? "bg-slate-100/40 dark:bg-white/5" : ""}`}
+          >
+            <div className="flex items-center justify-between text-xs">
+              <span className={palette.meta}>{item.day}</span>
+              <span className={palette.meta}>{item.attempts} attempts • {Math.round(item.accuracy)}% accuracy</span>
+            </div>
+            <div className={`mt-1 h-2 overflow-hidden rounded-full ${palette.progressTrack}`}>
+              <div className="h-full rounded-full bg-cyan-400" style={{ width }}>
+                <title>{`${item.day}: ${item.attempts} attempts, ${Math.round(item.accuracy)}% accuracy`}</title>
+              </div>
+            </div>
+            {isHovered ? (
+              <p className={`mt-1 text-[11px] ${palette.meta}`}>
+                {item.day}: {item.attempts} attempts with {Math.round(item.accuracy)}% accuracy
+              </p>
+            ) : null}
+          </div>
+        );
+      })}
+      </div>
+      <p className={`mt-2 text-xs ${palette.meta}`}>X-axis: Study day timeline</p>
+    </div>
+  );
+}
+
 function DashboardPage() {
   const { isDark } = useTheme();
   const [courses, setCourses] = useState([]);
@@ -67,6 +271,10 @@ function DashboardPage() {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState("");
   const [aiLastGeneratedAt, setAiLastGeneratedAt] = useState("");
+  const [aiReportLoading, setAiReportLoading] = useState(false);
+  const [aiReportError, setAiReportError] = useState("");
+  const [aiPerformanceReport, setAiPerformanceReport] = useState("");
+  const [aiActionItems, setAiActionItems] = useState([]);
 
   const palette = isDark
     ? {
@@ -154,6 +362,53 @@ function DashboardPage() {
   const weakTopics = Array.isArray(insights?.weakAreas) ? insights.weakAreas : [];
   const recentAttempts = Array.isArray(insights?.recentAttempts) ? insights.recentAttempts : [];
 
+  const trendPoints = useMemo(() => {
+    if (!recentAttempts.length) return [];
+
+    const chronological = recentAttempts.slice().reverse();
+    const chunkSize = 3;
+    const points = [];
+
+    for (let i = 0; i < chronological.length; i += chunkSize) {
+      const chunk = chronological.slice(i, i + chunkSize);
+      const correct = chunk.filter((item) => item.isCorrect).length;
+      const value = chunk.length ? (correct / chunk.length) * 100 : 0;
+      points.push({
+        label: `Set ${Math.floor(i / chunkSize) + 1}`,
+        value
+      });
+    }
+
+    return points.slice(-6);
+  }, [recentAttempts]);
+
+  const dailyActivity = useMemo(() => {
+    if (!recentAttempts.length) return [];
+
+    const grouped = {};
+    recentAttempts.forEach((item) => {
+      const date = new Date(item.createdAt);
+      const key = Number.isNaN(date.getTime())
+        ? "Unknown"
+        : new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(date);
+
+      if (!grouped[key]) {
+        grouped[key] = { day: key, attempts: 0, correct: 0 };
+      }
+
+      grouped[key].attempts += 1;
+      grouped[key].correct += item.isCorrect ? 1 : 0;
+    });
+
+    return Object.values(grouped)
+      .map((item) => ({
+        day: item.day,
+        attempts: item.attempts,
+        accuracy: item.attempts ? (item.correct / item.attempts) * 100 : 0
+      }))
+      .slice(-6);
+  }, [recentAttempts]);
+
   const currentCourseLabel =
     selectedCourse === "all" ? "All courses" : selectedCourse;
 
@@ -184,6 +439,43 @@ function DashboardPage() {
       setAiError(err.response?.data?.message || "Failed to generate AI recommendation.");
     } finally {
       setAiLoading(false);
+    }
+  };
+
+  const generateAiPerformanceSummary = async () => {
+    setAiReportLoading(true);
+    setAiReportError("");
+
+    try {
+      const topicPerformance = (Array.isArray(insights?.groupedByTopic) ? insights.groupedByTopic : []).map((item) => ({
+        topic: item.topic,
+        accuracy: Number(item.accuracyPercentage || 0)
+      }));
+
+      const response = await api.post("/ai/recommend", { topicPerformance });
+      const priorities = Array.isArray(response.data?.data?.priorities) ? response.data.data.priorities : [];
+      const trendDirection = trendPoints.length >= 2
+        ? trendPoints[trendPoints.length - 1].value - trendPoints[0].value
+        : 0;
+
+      const summary = [
+        `Overall accuracy is ${Math.round(overall.accuracyPercentage)}% with ${overall.totalAttempts} attempts in this view.`,
+        trendDirection > 5
+          ? "You are showing consistent improvement over recent quiz sets."
+          : trendDirection < -5
+            ? "Recent quiz performance is declining and needs focused revision."
+            : "Recent quiz trend is stable, so steady practice is important.",
+        weakTopics.length
+          ? `Weakest topics now: ${weakTopics.slice(0, 3).map((item) => item.topic).join(", ")}.`
+          : "No major weak topics detected in current data."
+      ].join(" ");
+
+      setAiPerformanceReport(summary);
+      setAiActionItems(priorities.slice(0, 5));
+    } catch (err) {
+      setAiReportError(err.response?.data?.message || "Failed to generate AI performance summary.");
+    } finally {
+      setAiReportLoading(false);
     }
   };
 
@@ -337,6 +629,32 @@ function DashboardPage() {
           <div className="grid gap-6 xl:grid-cols-[1fr_1fr]">
             <article className={`rounded-[26px] border p-5 sm:p-6 ${palette.card} ${palette.cardBorder}`}>
               <div className="flex items-center gap-2">
+                <BarChart3 size={18} className={palette.accent} />
+                <div>
+                  <p className={`text-xs font-semibold uppercase tracking-[0.25em] ${palette.meta}`}>Quiz Trend</p>
+                  <h2 className={`mt-2 text-xl font-bold ${palette.title}`}>Score trend over time</h2>
+                </div>
+              </div>
+              <div className="mt-5">
+                <LineTrendChart points={trendPoints} palette={palette} />
+              </div>
+            </article>
+
+            <article className={`rounded-[26px] border p-5 sm:p-6 ${palette.card} ${palette.cardBorder}`}>
+              <div className="flex items-center gap-2">
+                <Clock3 size={18} className={palette.meta} />
+                <div>
+                  <p className={`text-xs font-semibold uppercase tracking-[0.25em] ${palette.meta}`}>Study Activity</p>
+                  <h2 className={`mt-2 text-xl font-bold ${palette.title}`}>Attempts and daily accuracy</h2>
+                </div>
+              </div>
+              <div className="mt-5">
+                <ActivityChart items={dailyActivity} palette={palette} />
+              </div>
+            </article>
+
+            <article className={`rounded-[26px] border p-5 sm:p-6 ${palette.card} ${palette.cardBorder}`}>
+              <div className="flex items-center gap-2">
                 <TrendingUp size={18} className={palette.good} />
                 <div>
                   <p className={`text-xs font-semibold uppercase tracking-[0.25em] ${palette.meta}`}>Topic Strengths</p>
@@ -373,6 +691,39 @@ function DashboardPage() {
               </div>
             </article>
           </div>
+
+          <article className={`rounded-[26px] border p-5 sm:p-6 ${palette.card} ${palette.cardBorder}`}>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <Sparkles size={18} className={palette.accent} />
+                <div>
+                  <p className={`text-xs font-semibold uppercase tracking-[0.25em] ${palette.meta}`}>AI Insight</p>
+                  <h2 className={`mt-2 text-xl font-bold ${palette.title}`}>Explain my performance</h2>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={generateAiPerformanceSummary}
+                disabled={aiReportLoading}
+                className={`rounded-xl border px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-70 ${palette.chip}`}
+              >
+                {aiReportLoading ? "Generating summary..." : "Generate Summary"}
+              </button>
+            </div>
+
+            {aiReportError ? <p className={`mt-4 text-sm ${palette.bad}`}>{aiReportError}</p> : null}
+            {aiPerformanceReport ? <p className={`mt-4 text-sm leading-relaxed ${palette.meta}`}>{aiPerformanceReport}</p> : null}
+
+            {aiActionItems.length ? (
+              <ul className={`mt-4 space-y-2 text-sm ${palette.meta}`}>
+                {aiActionItems.map((item, index) => (
+                  <li key={`${item.topic}-${index}`}>
+                    - {item.topic}: {item.action} ({item.practiceCount} questions)
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </article>
 
           <article className={`rounded-[26px] border p-5 sm:p-6 ${palette.card} ${palette.cardBorder}`}>
             <div className="flex items-center gap-2">

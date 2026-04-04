@@ -1,4 +1,4 @@
-import { BarChart3, BookOpen, ChevronLeft, CircleHelp, FileText, LayoutGrid, LogOut, Moon, Network, ShieldCheck, Sparkles, Sun, UserRound } from "lucide-react";
+import { BarChart3, BookOpen, FileText, LayoutGrid, LogOut, Moon, Network, ShieldCheck, Sparkles, Sun, UserRound } from "lucide-react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
@@ -56,7 +56,6 @@ function AppShell() {
   const location = useLocation();
   const isAdmin = user?.role === "admin";
   const hideSidebar = location.pathname.startsWith("/app/admin");
-  const hideTopBar = location.pathname.startsWith("/app/admin");
   const userInitial = (user?.name || user?.email || "U").slice(0, 1).toUpperCase();
   const navigationItems = isAdmin ? [...studentItems, ...adminItems] : studentItems;
 
@@ -72,7 +71,6 @@ function AppShell() {
         logoWrap: "border-white/20 bg-black/40 text-white",
         heading: "text-white",
         textSoft: "text-slate-300",
-        textMain: "text-slate-200",
         button: "border-white/20 bg-white/10 text-slate-200 hover:bg-white/20",
         controlButton: "border-white/20 bg-white/10 text-slate-200"
       }
@@ -86,7 +84,6 @@ function AppShell() {
         logoWrap: "border-slate-300 bg-slate-100 text-slate-700",
         heading: "text-slate-800",
         textSoft: "text-slate-500",
-        textMain: "text-slate-700",
         button: "border-slate-300 bg-white text-slate-700 hover:bg-slate-100",
         controlButton: "border-slate-300 bg-white text-slate-600"
       };
@@ -147,26 +144,6 @@ function AppShell() {
         </aside>
 
         <div className={`min-w-0 ${hideSidebar ? "" : "lg:ml-[320px] lg:pl-4"}`}>
-          {!hideTopBar ? (
-            <header className={`mb-3 flex items-center gap-3 rounded-2xl border px-3 py-2.5 backdrop-blur sm:px-4 sm:py-3 ${shellClasses.topBar}`}>
-              <button
-                type="button"
-                className="grid h-9 w-9 place-items-center rounded-full border border-slate-300 bg-white text-slate-500"
-              >
-                <ChevronLeft size={16} />
-              </button>
-              <div>
-                <p className="text-xs uppercase tracking-[0.24em] text-slate-500">ExitPrep+</p>
-                <p className={`text-xs font-medium sm:text-sm ${shellClasses.textMain}`}>AI learning workspace</p>
-              </div>
-              <div className="ml-auto hidden md:block">
-                <div className={`rounded-xl border px-3 py-2 text-xs ${isDark ? "border-white/10 bg-white/5 text-slate-400" : "border-slate-200 bg-white text-slate-500"}`}>
-                  National Exit Exam Preparation
-                </div>
-              </div>
-            </header>
-          ) : null}
-
           <main className={`rounded-[26px] border p-4 shadow-[0_20px_70px_rgba(15,23,42,0.14)] sm:p-6 ${shellClasses.panel}`}>
             <Outlet />
           </main>

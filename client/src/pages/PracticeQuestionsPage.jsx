@@ -3,6 +3,12 @@ import { ArrowRight, Circle, Search, Share2 } from "lucide-react";
 import api from "../services/api";
 import { useTheme } from "../context/ThemeContext";
 
+function formatDuration(totalSeconds) {
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+}
+
 function sentenceCase(value) {
   if (!value || typeof value !== "string") {
     return "General";
@@ -92,6 +98,9 @@ function PracticeQuestionsPage() {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [revealedAnswers, setRevealedAnswers] = useState({});
   const [topicProgress, setTopicProgress] = useState({});
+  const [simulationDurationMinutes, setSimulationDurationMinutes] = useState(30);
+  const [remainingSeconds, setRemainingSeconds] = useState(0);
+  const [isTimeUp, setIsTimeUp] = useState(false);
 
   const palette = isDark
     ? {
@@ -150,6 +159,16 @@ function PracticeQuestionsPage() {
         successText: "text-emerald-700",
         wrongText: "text-rose-700"
       };
+
+  const activeTopic = useMemo(
+    () => topics.find((topic) => topic.id === activeTopicId) || null,
+    [topics, activeTopicId]
+  );
+
+  const activeQuestion = activeTopic?.questions?.[currentQuestionIndex] || null;
+  const selectedAnswer = activeQuestion ? selectedAnswers[activeQuestion.id] : "";
+  const hasAnsweredCurrentQuestion = Boolean(selectedAnswer);
+  const isCurrentQuestionRevealed = activeQuestion ? Boolean(revealedAnswers[activeQuestion.id]) : false;
 
   useEffect(() => {
     const loadQuestions = async () => {
@@ -231,8 +250,59 @@ function PracticeQuestionsPage() {
     setSelectedAnswers({});
     setRevealedAnswers({});
     setIsSubmitted(false);
+    setRemainingSeconds(0);
+    setIsTimeUp(false);
     setSearch("");
   }, [quizMode]);
+
+  useEffect(() => {
+    if (quizMode !== "simulation" || !activeTopic || isSubmitted || remainingSeconds <= 0) {
+      return undefined;
+    }
+
+    const timerId = window.setInterval(() => {
+      setRemainingSeconds((current) => Math.max(current - 1, 0));
+    }, 1000);
+
+    return () => {
+      window.clearInterval(timerId);
+    };
+  }, [quizMode, activeTopic, isSubmitted, remainingSeconds]);
+
+  useEffect(() => {
+    if (quizMode !== "simulation" || !activeTopic || isSubmitted || remainingSeconds !== 0) {
+      return;
+    }
+
+    setIsTimeUp(true);
+    setIsSubmitted(true);
+    setRevealedAnswers(
+      activeTopic.questions.reduce((acc, question) => {
+        acc[question.id] = true;
+        return acc;
+      }, {})
+    );
+    setTopicProgress((previous) => ({
+      ...previous,
+      [activeTopic.id]: activeTopic.total
+    }));
+
+    const answeredAttempts = activeTopic.questions
+      .filter((question) => Boolean(selectedAnswers[question.id]))
+      .map((question) => ({
+        course: question.subject || activeTopic.title,
+        topic: question.topic || question.subject || activeTopic.title,
+        isCorrect: selectedAnswers[question.id] === question.correctAnswer
+      }));
+
+    if (!answeredAttempts.length) {
+      return;
+    }
+
+    api.post("/attempts/bulk", { attempts: answeredAttempts }).catch(() => {
+      // Keep the quiz usable even if analytics tracking fails.
+    });
+  }, [quizMode, activeTopic, isSubmitted, remainingSeconds, selectedAnswers]);
 
   const filteredTopics = useMemo(() => {
     const term = search.toLowerCase();
@@ -240,16 +310,6 @@ function PracticeQuestionsPage() {
       (topic) => topic.title.toLowerCase().includes(term) || topic.description.toLowerCase().includes(term)
     );
   }, [search, topics]);
-
-  const activeTopic = useMemo(
-    () => topics.find((topic) => topic.id === activeTopicId) || null,
-    [topics, activeTopicId]
-  );
-
-  const activeQuestion = activeTopic?.questions?.[currentQuestionIndex] || null;
-  const selectedAnswer = activeQuestion ? selectedAnswers[activeQuestion.id] : "";
-  const hasAnsweredCurrentQuestion = Boolean(selectedAnswer);
-  const isCurrentQuestionRevealed = activeQuestion ? Boolean(revealedAnswers[activeQuestion.id]) : false;
 
   const score = useMemo(() => {
     if (!activeTopic) {
@@ -271,6 +331,8 @@ function PracticeQuestionsPage() {
     setSelectedAnswers({});
     setRevealedAnswers({});
     setIsSubmitted(false);
+    setIsTimeUp(false);
+    setRemainingSeconds(quizMode === "simulation" ? simulationDurationMinutes * 60 : 0);
   };
 
   const handleBackToTopics = () => {
@@ -279,10 +341,12 @@ function PracticeQuestionsPage() {
     setSelectedAnswers({});
     setRevealedAnswers({});
     setIsSubmitted(false);
+    setRemainingSeconds(0);
+    setIsTimeUp(false);
   };
 
   const handleSelectAnswer = (answer) => {
-    if (!activeQuestion || isSubmitted) {
+    if (!activeQuestion || isSubmitted || isCurrentQuestionRevealed) {
       return;
     }
 
@@ -290,10 +354,14 @@ function PracticeQuestionsPage() {
       ...previous,
       [activeQuestion.id]: answer
     }));
+    setRevealedAnswers((previous) => ({
+      ...previous,
+      [activeQuestion.id]: true
+    }));
   };
 
   const handleSubmitQuiz = () => {
-    if (!activeTopic) {
+    if (!activeTopic || isSubmitted) {
       return;
     }
 
@@ -347,8 +415,8 @@ function PracticeQuestionsPage() {
     <section className="space-y-6">
       <div className={`flex flex-wrap items-start justify-between gap-4 border-b pb-6 ${palette.divider}`}>
         <div>
-          <h1 className={`text-2xl font-bold tracking-tight sm:text-3xl ${palette.title}`}>EUEE Assessments</h1>
-          <p className={`mt-1 text-sm sm:text-base ${palette.description}`}>
+          <h1 className={`typo-page-title ${palette.title}`}>EUEE Assessments</h1>
+          <p className={`mt-1 typo-page-subtitle ${palette.description}`}>
             First choose EUEE Simulation, Past Exam, or Custom Questions by department.
           </p>
         </div>
@@ -383,8 +451,8 @@ function PracticeQuestionsPage() {
               <div className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold tracking-[0.2em] ${palette.shareButton}`}>
                 {card.badge}
               </div>
-              <h2 className={`mt-5 text-3xl font-semibold tracking-tight ${palette.title}`}>{card.title}</h2>
-              <p className={`mt-3 text-base leading-relaxed ${palette.description}`}>{card.description}</p>
+              <h2 className={`mt-5 typo-section-title ${palette.title}`}>{card.title}</h2>
+              <p className={`mt-3 typo-body-relaxed ${palette.description}`}>{card.description}</p>
               <button
                 type="button"
                 onClick={() => setQuizMode(card.id)}
@@ -411,6 +479,24 @@ function PracticeQuestionsPage() {
 
       {quizMode && !loading && !error && !activeTopic ? (
         <div className={`overflow-hidden rounded-2xl border ${palette.listWrap}`}>
+          {quizMode === "simulation" ? (
+            <div className={`flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3 sm:px-5 ${palette.rowDivider}`}>
+              <div>
+                <p className={`text-sm font-semibold ${palette.title}`}>Simulation duration</p>
+                <p className={`text-xs ${palette.description}`}>Set the quiz time before you start.</p>
+              </div>
+              <select
+                value={simulationDurationMinutes}
+                onChange={(event) => setSimulationDurationMinutes(Number(event.target.value))}
+                className={`rounded-xl border px-3 py-2 text-sm outline-none ${palette.searchInput}`}
+              >
+                <option value={15}>15 minutes</option>
+                <option value={30}>30 minutes</option>
+                <option value={45}>45 minutes</option>
+                <option value={60}>60 minutes</option>
+              </select>
+            </div>
+          ) : null}
           {filteredTopics.map((topic, index) => (
             <div
               key={topic.id}
@@ -424,8 +510,8 @@ function PracticeQuestionsPage() {
               />
 
               <div className="min-w-0 flex-1 basis-full sm:basis-auto">
-                <p className={`truncate text-lg font-semibold tracking-tight sm:text-xl ${palette.topicTitle}`}>{topic.title}</p>
-                <p className={`mt-1 truncate text-sm sm:text-base ${palette.topicDescription}`}>{topic.description}</p>
+                <p className={`truncate typo-row-title ${palette.topicTitle}`}>{topic.title}</p>
+                <p className={`mt-1 truncate typo-body ${palette.topicDescription}`}>{topic.description}</p>
               </div>
 
               <button
@@ -436,7 +522,7 @@ function PracticeQuestionsPage() {
                 <Share2 size={16} />
               </button>
 
-              <p className={`w-16 text-center text-base font-medium sm:w-20 sm:text-lg ${palette.ratio}`}>
+              <p className={`w-16 text-center typo-body sm:w-20 ${palette.ratio}`}>
                 {topicProgress[topic.id] || topic.completed}/{topic.total}
               </p>
 
@@ -465,10 +551,16 @@ function PracticeQuestionsPage() {
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b pb-4 sm:mb-5 sm:pb-5">
             <div>
               <p className={`text-sm ${palette.description}`}>{activeTopic.title} Quiz</p>
-              <h2 className={`text-xl font-semibold sm:text-2xl ${palette.title}`}>
+              <h2 className={`typo-section-title ${palette.title}`}>
                 Question {currentQuestionIndex + 1} of {activeTopic.questions.length}
               </h2>
             </div>
+
+            {quizMode === "simulation" ? (
+              <p className={`rounded-full border px-3 py-1 text-sm font-semibold ${palette.shareButton}`}>
+                Time left: {formatDuration(remainingSeconds)}
+              </p>
+            ) : null}
 
             <button
               type="button"
@@ -479,7 +571,7 @@ function PracticeQuestionsPage() {
             </button>
           </div>
 
-          <p className={`text-base font-medium leading-relaxed sm:text-lg ${palette.title}`}>{activeQuestion.questionText}</p>
+          <p className={`typo-body-relaxed font-medium ${palette.title}`}>{activeQuestion.questionText}</p>
 
           <div className="mt-4 space-y-3">
             {activeQuestion.options.map((option) => {
@@ -504,7 +596,7 @@ function PracticeQuestionsPage() {
                   key={option}
                   type="button"
                   onClick={() => handleSelectAnswer(option)}
-                  className={`w-full rounded-xl border px-4 py-3 text-left text-sm transition sm:text-base ${optionClass}`}
+                  className={`w-full rounded-xl border px-4 py-3 text-left text-sm transition ${optionClass}`}
                 >
                   {option}
                 </button>
@@ -543,7 +635,10 @@ function PracticeQuestionsPage() {
               <button
                 type="button"
                 onClick={handleNext}
-                disabled={currentQuestionIndex === activeTopic.questions.length - 1}
+                disabled={
+                  currentQuestionIndex === activeTopic.questions.length - 1 ||
+                  !hasAnsweredCurrentQuestion
+                }
                 className={`rounded-xl border px-3 py-2 text-sm transition disabled:cursor-not-allowed disabled:opacity-50 ${palette.quizSecondaryButton}`}
               >
                 Next
@@ -561,6 +656,9 @@ function PracticeQuestionsPage() {
 
           {isSubmitted ? (
             <div className={`mt-4 rounded-xl border px-4 py-3 ${palette.listWrap}`}>
+              {isTimeUp ? (
+                <p className={`text-sm font-semibold ${palette.wrongText}`}>Time is up. Your simulation was submitted automatically.</p>
+              ) : null}
               <p className={`text-base font-semibold ${palette.title}`}>
                 Total Mark: {score}/{activeTopic.questions.length}
               </p>

@@ -94,6 +94,7 @@ function AIAssistantPage() {
   const [quizQuestions, setQuizQuestions] = useState([]);
   const [weeklyPlan, setWeeklyPlan] = useState(null);
   const [activeOutput, setActiveOutput] = useState("");
+  const [expandedPlanDay, setExpandedPlanDay] = useState(null);
   const [quizIndex, setQuizIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState("");
   const [isAnswered, setIsAnswered] = useState(false);
@@ -347,6 +348,7 @@ function AIAssistantPage() {
         subject: source.subject,
         ...planData
       });
+      setExpandedPlanDay(null);
     } catch (err) {
       setPlanError(err?.response?.data?.message || err?.message || "Failed to generate weekly plan.");
     } finally {
@@ -382,8 +384,8 @@ function AIAssistantPage() {
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className={`text-xs font-semibold uppercase tracking-[0.3em] ${palette.meta}`}>AI Hub</p>
-            <h1 className={`mt-2 text-2xl font-bold sm:text-3xl ${palette.title}`}>Smart PDF Note Summarizer</h1>
-            <p className={`mt-2 max-w-3xl text-sm sm:text-base ${palette.meta}`}>
+            <h1 className={`mt-2 typo-page-title ${palette.title}`}>Smart PDF Note Summarizer</h1>
+            <p className={`mt-2 max-w-3xl typo-page-subtitle ${palette.meta}`}>
               Choose any previously uploaded course PDF or upload a new one, then generate a clean AI summary.
             </p>
           </div>
@@ -480,7 +482,7 @@ function AIAssistantPage() {
           className={`ml-2 mt-4 inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-70 ${palette.button}`}
         >
           {planLoading ? <LoaderCircle size={16} className="animate-spin" /> : <Sparkles size={16} />}
-          {planLoading ? "Generating Weekly Plan..." : "Generate Weekly Plan"}
+          {planLoading ? "Building Plan..." : "Build Plan"}
         </button>
 
         {error ? <p className={`mt-4 text-sm ${palette.danger}`}>{error}</p> : null}
@@ -492,12 +494,12 @@ function AIAssistantPage() {
         <article className={`rounded-[26px] border p-5 sm:p-6 ${palette.card} ${palette.border}`}>
           <p className={`text-xs font-semibold uppercase tracking-[0.24em] ${palette.meta}`}>Summary Output</p>
           <p className={`mt-1 text-xs ${palette.meta}`}>{summary.sourceLabel}</p>
-          <h2 className={`mt-2 text-xl font-bold ${palette.title}`}>{summary.subject}</h2>
+          <h2 className={`mt-2 typo-section-title ${palette.title}`}>{summary.subject}</h2>
 
           <section className="mt-4 space-y-4">
             <div>
               <p className={`text-xs font-semibold uppercase tracking-[0.2em] ${palette.meta}`}>Short Summary</p>
-              <p className={`mt-2 text-sm leading-7 ${palette.page}`}>{summary.shortSummary || "No summary text returned."}</p>
+              <p className={`mt-2 typo-body-relaxed ${palette.page}`}>{summary.shortSummary || "No summary text returned."}</p>
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">
@@ -527,8 +529,8 @@ function AIAssistantPage() {
         <article className={`rounded-[26px] border p-5 sm:p-6 ${palette.card} ${palette.border}`}>
           <p className={`text-xs font-semibold uppercase tracking-[0.24em] ${palette.meta}`}>Weekly Plan</p>
           <p className={`mt-1 text-xs ${palette.meta}`}>{weeklyPlan.sourceLabel}</p>
-          <h2 className={`mt-2 text-xl font-bold ${palette.title}`}>{weeklyPlan.subject}</h2>
-          <p className={`mt-3 text-sm leading-7 ${palette.page}`}>{weeklyPlan.explanation || "No plan explanation available."}</p>
+          <h2 className={`mt-2 typo-section-title ${palette.title}`}>{weeklyPlan.subject}</h2>
+          <p className={`mt-3 typo-body-relaxed ${palette.page}`}>{weeklyPlan.explanation || "No plan explanation available."}</p>
 
           {Array.isArray(weeklyPlan.focusAreas) && weeklyPlan.focusAreas.length ? (
             <div className="mt-4">
@@ -546,18 +548,30 @@ function AIAssistantPage() {
           <div className="mt-4 grid gap-3 md:grid-cols-2">
             {(Array.isArray(weeklyPlan.weeklySchedule) ? weeklyPlan.weeklySchedule : []).map((dayItem, index) => (
               <article key={`${dayItem.day || "day"}-${index}`} className={`rounded-xl border p-4 ${palette.input}`}>
-                <div className="flex items-center justify-between gap-3">
-                  <p className={`text-sm font-semibold ${palette.title}`}>{dayItem.day || `Day ${index + 1}`}</p>
-                  <p className={`text-xs ${palette.meta}`}>{Math.round(Number(dayItem.durationMinutes || 0))} min</p>
-                </div>
-                <p className={`mt-1 text-xs font-semibold uppercase tracking-[0.14em] ${palette.meta}`}>
-                  {dayItem.focus || "Study"}
-                </p>
-                <ul className={`mt-3 space-y-1 text-sm ${palette.page}`}>
-                  {(Array.isArray(dayItem.tasks) ? dayItem.tasks : []).map((task, taskIndex) => (
-                    <li key={`${index}-task-${taskIndex}`}>- {task}</li>
-                  ))}
-                </ul>
+                <button
+                  type="button"
+                  onClick={() => setExpandedPlanDay((current) => (current === index ? null : index))}
+                  className="flex w-full items-center justify-between gap-3 text-left"
+                >
+                  <div>
+                    <p className={`typo-body font-semibold ${palette.title}`}>{dayItem.day || `Day ${index + 1}`}</p>
+                    <p className={`mt-1 text-xs font-semibold uppercase tracking-[0.14em] ${palette.meta}`}>
+                      {dayItem.focus || "Study"}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className={`text-xs ${palette.meta}`}>{Math.round(Number(dayItem.durationMinutes || 0))} min</p>
+                    <p className={`mt-1 text-xs ${palette.meta}`}>{expandedPlanDay === index ? "Hide details" : "View details"}</p>
+                  </div>
+                </button>
+
+                {expandedPlanDay === index ? (
+                  <ul className={`mt-3 space-y-1 text-sm ${palette.page}`}>
+                    {(Array.isArray(dayItem.tasks) ? dayItem.tasks : []).map((task, taskIndex) => (
+                      <li key={`${index}-task-${taskIndex}`}>- {task}</li>
+                    ))}
+                  </ul>
+                ) : null}
               </article>
             ))}
           </div>
@@ -579,7 +593,7 @@ function AIAssistantPage() {
         <article className={`rounded-[26px] border p-5 sm:p-6 ${palette.card} ${palette.border}`}>
           <p className={`text-xs font-semibold uppercase tracking-[0.24em] ${palette.meta}`}>Quiz</p>
           <p className={`mt-1 text-xs ${palette.meta}`}>Question {quizIndex + 1} of {quizQuestions.length}</p>
-          <h2 className={`mt-3 text-lg font-semibold ${palette.title}`}>{currentQuestion.questionText}</h2>
+          <h2 className={`mt-3 typo-section-title ${palette.title}`}>{currentQuestion.questionText}</h2>
 
           <div className="mt-4 space-y-2">
             {(Array.isArray(currentQuestion.options) ? currentQuestion.options : []).map((option, index) => {

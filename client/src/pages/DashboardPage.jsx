@@ -25,7 +25,7 @@ function StatTile({ label, value, helper, palette, accent }) {
   return (
     <article className={`rounded-2xl border p-4 sm:p-5 ${palette.card} ${palette.cardBorder}`}>
       <p className={`text-[11px] font-semibold uppercase tracking-[0.25em] ${palette.meta}`}>{label}</p>
-      <p className={`mt-2 text-3xl font-bold sm:text-4xl ${accent || palette.title}`}>{value}</p>
+      <p className={`mt-2 typo-stat-value ${accent || palette.title}`}>{value}</p>
       <p className={`mt-2 text-sm ${palette.meta}`}>{helper}</p>
     </article>
   );
@@ -275,6 +275,7 @@ function DashboardPage() {
   const [aiReportError, setAiReportError] = useState("");
   const [aiPerformanceReport, setAiPerformanceReport] = useState("");
   const [aiActionItems, setAiActionItems] = useState([]);
+  const [expandedPlanDay, setExpandedPlanDay] = useState(null);
 
   const palette = isDark
     ? {
@@ -434,6 +435,7 @@ function DashboardPage() {
       setAiRecommendation(typeof planData.explanation === "string" ? planData.explanation : "No recommendation returned.");
       setAiWeakSubjects(Array.isArray(planData.focusAreas) ? planData.focusAreas : []);
       setAiWeeklySchedule(schedule);
+      setExpandedPlanDay(null);
       setAiLastGeneratedAt(new Date().toISOString());
     } catch (err) {
       setAiError(err.response?.data?.message || "Failed to generate AI recommendation.");
@@ -485,10 +487,10 @@ function DashboardPage() {
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <p className={`text-xs font-semibold uppercase tracking-[0.3em] ${palette.meta}`}>Insights</p>
-            <h1 className={`mt-2 text-2xl font-bold tracking-tight sm:text-4xl ${palette.title}`}>
+            <h1 className={`mt-2 typo-page-title ${palette.title}`}>
               Course performance analytics
             </h1>
-            <p className={`mt-2 max-w-3xl text-sm sm:text-base ${palette.meta}`}>
+            <p className={`mt-2 max-w-3xl typo-page-subtitle ${palette.meta}`}>
               Dynamic performance metrics by course and topic from real attempts stored in the database.
             </p>
           </div>
@@ -520,7 +522,7 @@ function DashboardPage() {
             <Sparkles size={18} className={palette.accent} />
             <div>
               <p className={`text-xs font-semibold uppercase tracking-[0.25em] ${palette.meta}`}>AI Coach</p>
-              <h2 className={`mt-2 text-xl font-bold ${palette.title}`}>Personalized study plan</h2>
+              <h2 className={`mt-2 typo-section-title ${palette.title}`}>Personalized study plan</h2>
             </div>
           </div>
           <button
@@ -548,21 +550,39 @@ function DashboardPage() {
               </div>
             ) : null}
             {aiWeeklySchedule.length ? (
-              <div className="grid gap-3 md:grid-cols-2">
-                {aiWeeklySchedule.map((dayPlan, index) => (
-                  <article key={`${dayPlan.day || "day"}-${index}`} className={`rounded-xl border p-3 ${palette.card} ${palette.cardBorder}`}>
-                    <div className="flex items-center justify-between gap-3">
-                      <p className={`text-sm font-semibold ${palette.title}`}>{dayPlan.day || `Day ${index + 1}`}</p>
-                      <p className={`text-xs ${palette.meta}`}>{Math.round(Number(dayPlan.durationMinutes || 0))} min</p>
-                    </div>
-                    <p className={`mt-1 text-xs font-semibold uppercase tracking-[0.14em] ${palette.meta}`}>{dayPlan.focus || "Focused review"}</p>
-                    <ul className={`mt-2 space-y-1 text-sm ${palette.meta}`}>
-                      {(Array.isArray(dayPlan.tasks) ? dayPlan.tasks : []).slice(0, 3).map((task, taskIndex) => (
-                        <li key={`${index}-task-${taskIndex}`}>- {task}</li>
-                      ))}
-                    </ul>
-                  </article>
-                ))}
+              <div className="space-y-3">
+                {aiWeeklySchedule.map((dayPlan, index) => {
+                  const isExpanded = expandedPlanDay === index;
+
+                  return (
+                    <article key={`${dayPlan.day || "day"}-${index}`} className={`overflow-hidden rounded-xl border ${palette.card} ${palette.cardBorder}`}>
+                      <button
+                        type="button"
+                        onClick={() => setExpandedPlanDay((current) => (current === index ? null : index))}
+                        className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left"
+                      >
+                        <div>
+                          <p className={`text-sm font-semibold ${palette.title}`}>{dayPlan.day || `Day ${index + 1}`}</p>
+                          <p className={`mt-1 text-xs font-semibold uppercase tracking-[0.14em] ${palette.meta}`}>{dayPlan.focus || "Focused review"}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className={`text-xs ${palette.meta}`}>{Math.round(Number(dayPlan.durationMinutes || 0))} min</p>
+                          <p className={`mt-1 text-xs ${palette.meta}`}>{isExpanded ? "Hide details" : "View details"}</p>
+                        </div>
+                      </button>
+
+                      {isExpanded ? (
+                        <div className={`border-t px-4 py-3 ${palette.divider}`}>
+                          <ul className={`space-y-1 text-sm ${palette.meta}`}>
+                            {(Array.isArray(dayPlan.tasks) ? dayPlan.tasks : []).map((task, taskIndex) => (
+                              <li key={`${index}-task-${taskIndex}`}>- {task}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      ) : null}
+                    </article>
+                  );
+                })}
               </div>
             ) : null}
             {aiLastGeneratedAt ? <p className={`text-xs ${palette.meta}`}>Generated at {formatDate(aiLastGeneratedAt)}</p> : null}
@@ -632,7 +652,7 @@ function DashboardPage() {
                 <BarChart3 size={18} className={palette.accent} />
                 <div>
                   <p className={`text-xs font-semibold uppercase tracking-[0.25em] ${palette.meta}`}>Quiz Trend</p>
-                  <h2 className={`mt-2 text-xl font-bold ${palette.title}`}>Score trend over time</h2>
+                  <h2 className={`mt-2 typo-section-title ${palette.title}`}>Score trend over time</h2>
                 </div>
               </div>
               <div className="mt-5">
@@ -645,7 +665,7 @@ function DashboardPage() {
                 <Clock3 size={18} className={palette.meta} />
                 <div>
                   <p className={`text-xs font-semibold uppercase tracking-[0.25em] ${palette.meta}`}>Study Activity</p>
-                  <h2 className={`mt-2 text-xl font-bold ${palette.title}`}>Attempts and daily accuracy</h2>
+                  <h2 className={`mt-2 typo-section-title ${palette.title}`}>Attempts and daily accuracy</h2>
                 </div>
               </div>
               <div className="mt-5">
@@ -658,7 +678,7 @@ function DashboardPage() {
                 <TrendingUp size={18} className={palette.good} />
                 <div>
                   <p className={`text-xs font-semibold uppercase tracking-[0.25em] ${palette.meta}`}>Topic Strengths</p>
-                  <h2 className={`mt-2 text-xl font-bold ${palette.title}`}>Top performing topics</h2>
+                  <h2 className={`mt-2 typo-section-title ${palette.title}`}>Top performing topics</h2>
                 </div>
               </div>
 
@@ -676,7 +696,7 @@ function DashboardPage() {
                 <TrendingDown size={18} className={palette.bad} />
                 <div>
                   <p className={`text-xs font-semibold uppercase tracking-[0.25em] ${palette.meta}`}>Weak Areas</p>
-                  <h2 className={`mt-2 text-xl font-bold ${palette.title}`}>Topics needing attention</h2>
+                  <h2 className={`mt-2 typo-section-title ${palette.title}`}>Topics needing attention</h2>
                 </div>
               </div>
 
@@ -698,7 +718,7 @@ function DashboardPage() {
                 <Sparkles size={18} className={palette.accent} />
                 <div>
                   <p className={`text-xs font-semibold uppercase tracking-[0.25em] ${palette.meta}`}>AI Insight</p>
-                  <h2 className={`mt-2 text-xl font-bold ${palette.title}`}>Explain my performance</h2>
+                  <h2 className={`mt-2 typo-section-title ${palette.title}`}>Explain my performance</h2>
                 </div>
               </div>
               <button
@@ -730,7 +750,7 @@ function DashboardPage() {
               <Clock3 size={18} className={palette.meta} />
               <div>
                 <p className={`text-xs font-semibold uppercase tracking-[0.25em] ${palette.meta}`}>Recent Sessions</p>
-                <h2 className={`mt-2 text-xl font-bold ${palette.title}`}>Latest answered questions</h2>
+                <h2 className={`mt-2 typo-section-title ${palette.title}`}>Latest answered questions</h2>
               </div>
             </div>
 

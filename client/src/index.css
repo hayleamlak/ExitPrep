@@ -33,3 +33,68 @@ body {
 .font-mono {
   font-family: "IBM Plex Mono", monospace;
 }
+
+.typo-page-title {
+  font-size: 1.5rem;
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+
+.typo-page-subtitle {
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.typo-section-title {
+  font-size: 1.125rem;
+  line-height: 1.35;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.typo-row-title {
+  font-size: 1rem;
+  line-height: 1.35;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.typo-body {
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.typo-body-relaxed {
+  font-size: 0.875rem;
+  line-height: 1.65;
+}
+
+.typo-stat-value {
+  font-size: 1.75rem;
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+
+@media (min-width: 640px) {
+  .typo-page-title {
+    font-size: 1.875rem;
+  }
+
+  .typo-page-subtitle {
+    font-size: 1rem;
+  }
+
+  .typo-section-title {
+    font-size: 1.25rem;
+  }
+
+  .typo-row-title {
+    font-size: 1.125rem;
+  }
+
+  .typo-stat-value {
+    font-size: 2rem;
+  }
+}

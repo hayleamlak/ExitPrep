@@ -74,8 +74,8 @@ function CourseNotesPage() {
     <section className="space-y-6">
       <div className={`flex flex-wrap items-start justify-between gap-4 border-b pb-6 ${palette.divider}`}>
         <div>
-          <h1 className={`text-2xl sm:text-3xl font-bold tracking-tight ${palette.title}`}>Notes</h1>
-          <p className={`mt-1 text-sm sm:text-base ${palette.description}`}>
+          <h1 className={`typo-page-title ${palette.title}`}>Notes</h1>
+          <p className={`mt-1 typo-page-subtitle ${palette.description}`}>
             Click a course name to open its note. Notes are generated automatically after a course upload.
           </p>
         </div>
@@ -108,7 +108,7 @@ function CourseNotesPage() {
                 <FileText size={18} />
               </div>
               <div className="min-w-0 flex-1">
-                <h2 className={`truncate text-lg font-semibold ${palette.name}`}>{note.name || note.course}</h2>
+                <h2 className={`truncate typo-section-title ${palette.name}`}>{note.name || note.course}</h2>
                 <p className={`mt-1 text-xs ${palette.meta}`}>Updated: {new Date(note.updatedAt).toLocaleString()}</p>
               </div>
               <span className={`${palette.meta}`}>

@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ArrowRight, ArrowUpRight, LogOut, Mail, Pencil, Search, Sun, UserRound } from "lucide-react";
+import { ArrowRight, ArrowUpRight, BadgeCheck, CalendarDays, LogOut, Mail, Pencil, Search, Sun, UserRound } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 
@@ -16,7 +16,7 @@ function PreferenceRow({ icon: Icon, title, subtitle, checked, onToggle, accent 
       </div>
 
       <div className="min-w-0 flex-1">
-        <p className={`text-2xl font-semibold tracking-tight ${palette.rowTitle}`}>{title}</p>
+        <p className={`typo-section-title ${palette.rowTitle}`}>{title}</p>
         <p className={`mt-1 text-sm ${palette.rowSub}`}>{subtitle}</p>
       </div>
 
@@ -84,11 +84,13 @@ function ProfilePage() {
     })}`;
   }, [user?.createdAt]);
 
+  const userInitial = (user?.name || user?.email || "U").slice(0, 1).toUpperCase();
+
   return (
     <section className="mx-auto w-full max-w-5xl space-y-8">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h1 className={`text-4xl font-semibold tracking-tight ${palette.title}`}>Profile</h1>
+          <h1 className={`typo-page-title ${palette.title}`}>Profile</h1>
         </div>
         <button
           type="button"
@@ -96,6 +98,33 @@ function ProfilePage() {
         >
           <Pencil size={18} />
         </button>
+      </div>
+
+      <div className={`rounded-3xl border p-5 sm:p-6 ${palette.panel} ${palette.panelShadow}`}>
+        <div className="flex flex-wrap items-center gap-4">
+          <div className={`grid h-14 w-14 place-items-center rounded-2xl text-lg font-bold ${palette.iconNeutral}`}>
+            {userInitial}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className={`truncate typo-section-title ${palette.title}`}>{user?.name || "Signed in user"}</p>
+            <p className={`mt-1 truncate typo-body ${palette.rowSub}`}>{user?.email || "No email available"}</p>
+          </div>
+          <span className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] ${isDark ? "border-cyan-400/20 bg-cyan-400/10 text-cyan-200" : "border-sky-300 bg-sky-100 text-sky-700"}`}>
+            <BadgeCheck size={14} />
+            {user?.role || "student"}
+          </span>
+        </div>
+
+        <div className={`mt-5 grid gap-3 border-t pt-4 sm:grid-cols-2 ${palette.rowBorder}`}>
+          <div className="flex items-center gap-2">
+            <Mail size={16} className={palette.rowSub} />
+            <p className={`typo-body ${palette.rowSub}`}>{user?.email || "No email available"}</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <CalendarDays size={16} className={palette.rowSub} />
+            <p className={`typo-body ${palette.rowSub}`}>{joinedText}</p>
+          </div>
+        </div>
       </div>
 
       <div>
@@ -140,7 +169,7 @@ function ProfilePage() {
             </div>
             <div className="min-w-0 flex-1">
               <p className={`text-sm font-semibold uppercase tracking-[0.18em] ${palette.section}`}>Name</p>
-              <p className={`mt-1 truncate text-3xl font-semibold tracking-tight ${palette.title}`}>
+              <p className={`mt-1 truncate typo-section-title ${palette.title}`}>
                 {user?.name || "No name available"}
               </p>
             </div>
@@ -152,7 +181,7 @@ function ProfilePage() {
             </div>
             <div className="min-w-0 flex-1">
               <p className={`text-sm font-semibold uppercase tracking-[0.18em] ${palette.section}`}>Email</p>
-              <p className={`mt-1 truncate text-2xl font-semibold tracking-tight ${palette.title}`}>
+              <p className={`mt-1 truncate typo-row-title ${palette.title}`}>
                 {user?.email || "No email available"}
               </p>
             </div>
@@ -160,11 +189,23 @@ function ProfilePage() {
 
           <div className={`flex items-center gap-4 border-b px-4 py-5 sm:px-5 ${palette.rowBorder}`}>
             <div className={`grid h-12 w-12 place-items-center rounded-2xl ${palette.iconNeutral}`}>
-              <Mail size={20} />
+              <BadgeCheck size={20} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className={`text-sm font-semibold uppercase tracking-[0.18em] ${palette.section}`}>Role</p>
+              <p className={`mt-1 truncate typo-row-title ${palette.title}`}>
+                {user?.role || "student"}
+              </p>
+            </div>
+          </div>
+
+          <div className={`flex items-center gap-4 border-b px-4 py-5 sm:px-5 ${palette.rowBorder}`}>
+            <div className={`grid h-12 w-12 place-items-center rounded-2xl ${palette.iconNeutral}`}>
+              <CalendarDays size={20} />
             </div>
             <div className="min-w-0 flex-1">
               <p className={`text-sm font-semibold uppercase tracking-[0.18em] ${palette.section}`}>Membership</p>
-              <p className={`mt-1 text-4xl font-semibold tracking-tight ${palette.title}`}>{joinedText}</p>
+              <p className={`mt-1 typo-section-title ${palette.title}`}>{joinedText}</p>
               <p className={`mt-1 truncate text-sm ${palette.rowSub}`}>Account details from your profile data</p>
             </div>
           </div>
@@ -178,7 +219,7 @@ function ProfilePage() {
               <LogOut size={20} />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-3xl font-semibold tracking-tight text-rose-500">Sign Out</p>
+              <p className="typo-section-title text-rose-500">Sign Out</p>
               <p className="mt-1 text-sm text-rose-400">Securely leave your session</p>
             </div>
             <ArrowRight size={20} className="text-rose-300 transition group-hover:translate-x-1" />

@@ -1,4 +1,4 @@
-import { BarChart3, BookOpen, FileText, LayoutGrid, LogOut, Moon, Network, ShieldCheck, Sparkles, Sun, UserRound } from "lucide-react";
+import { BarChart3, BookOpen, FileText, LayoutGrid, Network, ShieldCheck, Sparkles, UserRound } from "lucide-react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
@@ -51,12 +51,11 @@ function NavSection({ title, items, isDark }) {
 }
 
 function AppShell() {
-  const { user, signOut } = useAuth();
-  const { theme, toggleTheme, isDark } = useTheme();
+  const { user } = useAuth();
+  const { isDark } = useTheme();
   const location = useLocation();
   const isAdmin = user?.role === "admin";
   const hideSidebar = location.pathname.startsWith("/app/admin");
-  const userInitial = (user?.name || user?.email || "U").slice(0, 1).toUpperCase();
   const navigationItems = isAdmin ? [...studentItems, ...adminItems] : studentItems;
 
   const shellClasses = isDark
@@ -105,42 +104,13 @@ function AppShell() {
           <NavSection title="Workspace" items={navigationItems} isDark={isDark} />
           {guidanceItems.length ? <NavSection title="Guidance" items={guidanceItems} isDark={isDark} /> : null}
 
-          <div className={`mt-8 flex items-center justify-between rounded-xl border px-3 py-2 text-sm ${shellClasses.textSoft} ${shellClasses.card}`}>
-            <span>Theme</span>
-            <button type="button" onClick={toggleTheme} className={`rounded-full border p-2 transition ${shellClasses.controlButton}`}>
-              {theme === "dark" ? <Sun size={14} /> : <Moon size={14} />}
-            </button>
-          </div>
-
-          <div className={`mt-4 rounded-2xl border p-3 ${shellClasses.card}`}>
-            <div className="flex items-center gap-3">
-              <div className={`grid h-10 w-10 place-items-center rounded-full text-sm font-bold ${isDark ? "bg-white/10 text-white" : "bg-slate-200 text-slate-700"}`}>
-                {userInitial}
-              </div>
-              <div className="min-w-0">
-                <p className={`truncate text-sm font-semibold ${shellClasses.heading}`}>{user?.name || "Signed in user"}</p>
-                <p className="truncate text-xs text-slate-400">{user?.email || "No email available"}</p>
-              </div>
-            </div>
-            <div className={`mt-3 inline-flex rounded-full border px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.18em] ${shellClasses.badge}`}>
-              {user?.role || "student"}
-            </div>
-            <NavLink
-              to="/app/profile"
-              className={`mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl border px-3 py-2 text-sm font-semibold transition ${shellClasses.button}`}
-            >
-              <UserRound size={15} />
-              Profile
-            </NavLink>
-            <button
-              type="button"
-              onClick={signOut}
-              className={`mt-2 inline-flex w-full items-center justify-center gap-2 rounded-xl border px-3 py-2 text-sm font-semibold transition ${shellClasses.button}`}
-            >
-              <LogOut size={15} />
-              Sign out
-            </button>
-          </div>
+          <NavLink
+            to="/app/profile"
+            className={`mt-8 inline-flex w-full items-center justify-center gap-2 rounded-xl border px-3 py-2 text-sm font-semibold transition ${shellClasses.button}`}
+          >
+            <UserRound size={15} />
+            Profile
+          </NavLink>
         </aside>
 
         <div className={`min-w-0 ${hideSidebar ? "" : "lg:ml-[320px] lg:pl-4"}`}>

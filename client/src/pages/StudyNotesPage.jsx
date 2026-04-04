@@ -115,8 +115,8 @@ function StudyNotesPage() {
     <section className="space-y-6">
       <div className={`flex flex-wrap items-start justify-between gap-4 border-b pb-6 ${palette.divider}`}>
         <div>
-          <h1 className={`text-2xl sm:text-3xl font-bold tracking-tight ${palette.title}`}>Course</h1>
-          <p className={`mt-1 text-sm sm:text-base ${palette.description}`}>
+          <h1 className={`typo-page-title ${palette.title}`}>Course</h1>
+          <p className={`mt-1 typo-page-subtitle ${palette.description}`}>
             Structured PDF course materials uploaded by admins.
           </p>
         </div>
@@ -138,7 +138,7 @@ function StudyNotesPage() {
       {loading ? <p className={`text-sm ${palette.emptyText}`}>Loading course...</p> : null}
 
       <div className={`overflow-hidden rounded-2xl border ${palette.listWrap}`}>
-        <div className={`hidden grid-cols-[minmax(240px,1.2fr)_minmax(210px,1fr)_120px_210px] gap-4 border-b px-5 py-3 text-xs font-semibold uppercase tracking-[0.16em] md:grid ${palette.rowDivider} ${palette.description}`}>
+        <div className={`hidden grid-cols-[minmax(220px,1.2fr)_minmax(210px,1fr)_110px_190px] gap-3 border-b px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.14em] md:grid ${palette.rowDivider} ${palette.description}`}>
           <span>PDF Course</span>
           <span>Course Info</span>
           <span>Downloads</span>
@@ -148,27 +148,27 @@ function StudyNotesPage() {
         {filteredTopics.map((topic) => (
           <article
             key={topic.id}
-            className={`grid gap-3 border-b px-4 py-4 last:border-b-0 md:grid-cols-[minmax(240px,1.2fr)_minmax(210px,1fr)_120px_210px] md:items-center md:gap-4 md:px-5 ${palette.rowDivider}`}
+            className={`grid gap-2.5 border-b px-4 py-3.5 last:border-b-0 md:grid-cols-[minmax(220px,1.2fr)_minmax(210px,1fr)_110px_190px] md:items-center md:gap-3 md:px-4 ${palette.rowDivider}`}
           >
             <div className="flex min-w-0 items-start gap-3">
               <div className="mt-0.5 grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-blue-500/15 text-blue-400">
                 <FileText size={18} />
               </div>
               <div className="min-w-0">
-                <h3 className={`truncate text-base font-semibold sm:text-lg ${palette.noteTitle}`}>{topic.title}</h3>
-                <p className={`mt-1 truncate text-xs sm:text-sm ${palette.noteMeta}`}>Year: {topic.year || "-"}</p>
+                <h3 className={`truncate text-sm font-semibold sm:text-base ${palette.noteTitle}`}>{topic.title}</h3>
+                <p className={`mt-0.5 truncate text-xs ${palette.noteMeta}`}>Year: {topic.year || "-"}</p>
               </div>
             </div>
 
             <div className="min-w-0">
-              <p className={`truncate text-sm ${palette.noteMeta}`}>{topic.description}</p>
+              <p className={`truncate text-xs ${palette.noteMeta}`}>{topic.description}</p>
             </div>
 
             <div className="flex items-center gap-2">
               <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${palette.chip}`}>
                 PDF
               </span>
-              <span className={`text-sm font-semibold ${palette.downloadCount}`}>{topic.downloads} downloads</span>
+              <span className={`text-xs font-semibold ${palette.downloadCount}`}>{topic.downloads} downloads</span>
             </div>
 
             <div className="flex items-center gap-2">
@@ -176,9 +176,9 @@ function StudyNotesPage() {
                 type="button"
                 onClick={() => topic.fileUrl && openInNewTab(topic.fileUrl)}
                 disabled={!topic.fileUrl}
-                className={`inline-flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${palette.openButton}`}
+                className={`inline-flex items-center justify-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${palette.openButton}`}
               >
-                <ExternalLink size={15} />
+                <ExternalLink size={13} />
                 Open
               </button>
 
@@ -186,9 +186,9 @@ function StudyNotesPage() {
                 type="button"
                 onClick={() => startDownload(topic)}
                 disabled={!topic.fileUrl || busyResourceId === topic.id}
-                className={`inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${palette.downloadButton}`}
+                className={`inline-flex items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${palette.downloadButton}`}
               >
-                <Download size={15} />
+                <Download size={13} />
                 {busyResourceId === topic.id ? "Saving..." : "Download"}
               </button>
             </div>

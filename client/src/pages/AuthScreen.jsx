@@ -18,7 +18,7 @@ function roleCopy(role) {
 
   return {
     title: "Student access",
-    description: "Study notes, practice questions, and progress insights in one place."
+    description: "Study course materials, practice questions, and progress insights in one place."
   };
 }
 

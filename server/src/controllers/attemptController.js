@@ -117,7 +117,7 @@ async function getInsightsByCourse(req, res) {
       match.course = selectedCourse;
     }
 
-    const [overallStats, topicStats, recentAttempts] = await Promise.all([
+    const [overallStats, topicStats, subjectStats, recentAttempts] = await Promise.all([
       Attempt.aggregate([
         { $match: match },
         {
@@ -147,6 +147,21 @@ async function getInsightsByCourse(req, res) {
         },
         { $sort: { attempts: -1, _id: 1 } }
       ]),
+      Attempt.aggregate([
+        { $match: { userId: new mongoose.Types.ObjectId(targetUserId) } },
+        {
+          $group: {
+            _id: "$course",
+            totalAttempts: { $sum: 1 },
+            correctAnswers: {
+              $sum: {
+                $cond: [{ $eq: ["$isCorrect", true] }, 1, 0]
+              }
+            }
+          }
+        },
+        { $sort: { _id: 1 } }
+      ]),
       Attempt.find(match)
         .sort({ createdAt: -1 })
         .limit(10)
@@ -173,6 +188,17 @@ async function getInsightsByCourse(req, res) {
       .sort((a, b) => a.accuracyPercentage - b.accuracyPercentage || b.attempts - a.attempts)
       .slice(0, 5);
 
+    const insightsBySubject = subjectStats.map((item) => {
+      const subjectAccuracy = toPercent(item.correctAnswers, item.totalAttempts);
+      return {
+        subject: item._id || "General",
+        totalAttempts: item.totalAttempts,
+        correctAnswers: item.correctAnswers,
+        accuracyPercentage: subjectAccuracy,
+        averageScore: subjectAccuracy
+      };
+    });
+
     return res.json({
       filter: {
         userId: targetUserId,
@@ -184,6 +210,7 @@ async function getInsightsByCourse(req, res) {
         accuracyPercentage,
         averageScore
       },
+      insightsBySubject,
       groupedByTopic,
       weakAreas,
       recentAttempts

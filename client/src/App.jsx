@@ -11,9 +11,10 @@ import ProfilePage from "./pages/ProfilePage";
 import SignInPage from "./pages/SignInPage";
 import SignUpPage from "./pages/SignUpPage";
 import AIAssistantPage from "./pages/AIAssistantPage";
+import CourseNotesPage from "./pages/CourseNotesPage";
 
 function defaultRouteForRole(role) {
-  return role === "admin" ? "/app/admin" : "/app/study-notes";
+  return role === "admin" ? "/app/admin" : "/app/ai-assistant";
 }
 
 function RequireAuth({ children }) {
@@ -72,6 +73,7 @@ function App() {
             <Route index element={<LandingRedirect />} />
             <Route path="dashboard" element={<DashboardPage />} />
             <Route path="study-notes" element={<StudyNotesPage />} />
+            <Route path="course-notes" element={<CourseNotesPage />} />
             <Route path="practice-questions" element={<PracticeQuestionsPage />} />
             <Route path="ai-assistant" element={<AIAssistantPage />} />
             <Route path="profile" element={<ProfilePage />} />

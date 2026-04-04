@@ -31,6 +31,7 @@ This document covers the **AI Coach** feature: behavior, usage, architecture, co
 | **Data-driven** | Uses real attempt history and course/topic accuracy |
 | **Regeneration** | Students can refresh recommendations after new practice |
 | **Resilient** | Deterministic fallback when external AI is unavailable |
+| **Uploaded-PDF AI Pack** | AI Hub can generate summary, quiz, and weekly plan from selected uploaded note content |
 
 ---
 
@@ -283,6 +284,13 @@ Example output:
 | Recommendation text | Personalized study guidance |
 | Weak-subject chips | Subjects flagged for extra focus |
 | Timestamp | When the plan was generated |
+
+### AI Hub source workflow
+
+1. Open AI Hub.
+2. Select one uploaded note source from the source selector.
+3. Click **Use Source In Forms** to auto-fill subject/topic/plan fields.
+4. Click **Generate AI Pack** to run summary + quiz + weekly plan from that selected uploaded content.
 
 ---
 

@@ -12,6 +12,7 @@ const aiRoutes = require("./routes/aiRoutes");
 const insightsRoutes = require("./routes/insightsRoutes");
 const attemptRoutes = require("./routes/attemptRoutes");
 const adminRoutes = require("./routes/adminRoutes");
+const noteRoutes = require("./routes/noteRoutes");
 
 const app = express();
 
@@ -38,6 +39,7 @@ app.use("/api/ai", aiRoutes);
 app.use("/api/insights", insightsRoutes);
 app.use("/api/attempts", attemptRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/notes", noteRoutes);
 
 app.use((err, _req, res, _next) => {
   console.error(err);

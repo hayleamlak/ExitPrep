@@ -63,6 +63,7 @@ function DashboardPage() {
   const [error, setError] = useState("");
   const [aiRecommendation, setAiRecommendation] = useState("");
   const [aiWeakSubjects, setAiWeakSubjects] = useState([]);
+  const [aiWeeklySchedule, setAiWeeklySchedule] = useState([]);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState("");
   const [aiLastGeneratedAt, setAiLastGeneratedAt] = useState("");
@@ -139,6 +140,9 @@ function DashboardPage() {
     averageScore: 0
   };
 
+  const insightsBySubject = Array.isArray(insights?.insightsBySubject) ? insights.insightsBySubject : [];
+  const showPerSubjectInsights = selectedCourse === "all";
+
   const strongTopics = useMemo(() => {
     const list = Array.isArray(insights?.groupedByTopic) ? insights.groupedByTopic : [];
     return list
@@ -149,16 +153,6 @@ function DashboardPage() {
 
   const weakTopics = Array.isArray(insights?.weakAreas) ? insights.weakAreas : [];
   const recentAttempts = Array.isArray(insights?.recentAttempts) ? insights.recentAttempts : [];
-  const aiSubjectScores = useMemo(() => {
-    const groupedTopics = Array.isArray(insights?.groupedByTopic) ? insights.groupedByTopic : [];
-
-    return groupedTopics.reduce((acc, item) => {
-      const topic = typeof item?.topic === "string" && item.topic.trim() ? item.topic.trim() : "General";
-      const scoreOutOfFive = Number((clamp(item?.accuracyPercentage, 0, 100) / 20).toFixed(2));
-      acc[topic] = scoreOutOfFive;
-      return acc;
-    }, {});
-  }, [insights]);
 
   const currentCourseLabel =
     selectedCourse === "all" ? "All courses" : selectedCourse;
@@ -168,12 +162,23 @@ function DashboardPage() {
     setAiError("");
 
     try {
-      const response = await api.post("/ai/dashboard", {
-        subjectScores: aiSubjectScores
+      const response = await api.post("/ai/study-plan", {
+        courseName: selectedCourse === "all" ? "" : selectedCourse,
+        hoursPerWeek: 10,
+        preferredStudyTime: "evening",
+        autoFromAttempts: true
       });
 
-      setAiRecommendation(typeof response.data?.recommendation === "string" ? response.data.recommendation : "No recommendation returned.");
-      setAiWeakSubjects(Array.isArray(response.data?.weakSubjects) ? response.data.weakSubjects : []);
+      const planData = response.data?.data || {};
+      const schedule = Array.isArray(planData.weeklySchedule)
+        ? planData.weeklySchedule
+        : Array.isArray(planData.dailySchedule)
+          ? planData.dailySchedule
+          : [];
+
+      setAiRecommendation(typeof planData.explanation === "string" ? planData.explanation : "No recommendation returned.");
+      setAiWeakSubjects(Array.isArray(planData.focusAreas) ? planData.focusAreas : []);
+      setAiWeeklySchedule(schedule);
       setAiLastGeneratedAt(new Date().toISOString());
     } catch (err) {
       setAiError(err.response?.data?.message || "Failed to generate AI recommendation.");
@@ -250,6 +255,24 @@ function DashboardPage() {
                 ))}
               </div>
             ) : null}
+            {aiWeeklySchedule.length ? (
+              <div className="grid gap-3 md:grid-cols-2">
+                {aiWeeklySchedule.map((dayPlan, index) => (
+                  <article key={`${dayPlan.day || "day"}-${index}`} className={`rounded-xl border p-3 ${palette.card} ${palette.cardBorder}`}>
+                    <div className="flex items-center justify-between gap-3">
+                      <p className={`text-sm font-semibold ${palette.title}`}>{dayPlan.day || `Day ${index + 1}`}</p>
+                      <p className={`text-xs ${palette.meta}`}>{Math.round(Number(dayPlan.durationMinutes || 0))} min</p>
+                    </div>
+                    <p className={`mt-1 text-xs font-semibold uppercase tracking-[0.14em] ${palette.meta}`}>{dayPlan.focus || "Focused review"}</p>
+                    <ul className={`mt-2 space-y-1 text-sm ${palette.meta}`}>
+                      {(Array.isArray(dayPlan.tasks) ? dayPlan.tasks : []).slice(0, 3).map((task, taskIndex) => (
+                        <li key={`${index}-task-${taskIndex}`}>- {task}</li>
+                      ))}
+                    </ul>
+                  </article>
+                ))}
+              </div>
+            ) : null}
             {aiLastGeneratedAt ? <p className={`text-xs ${palette.meta}`}>Generated at {formatDate(aiLastGeneratedAt)}</p> : null}
           </div>
         ) : (
@@ -268,32 +291,47 @@ function DashboardPage() {
           </div>
 
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <StatTile
-              label="Total Attempts"
-              value={overall.totalAttempts}
-              helper="All answered questions for this filter."
-              palette={palette}
-            />
-            <StatTile
-              label="Correct Answers"
-              value={overall.correctAnswers}
-              helper="Correct responses recorded."
-              palette={palette}
-            />
-            <StatTile
-              label="Accuracy"
-              value={`${Math.round(overall.accuracyPercentage)}%`}
-              helper="Correct answers divided by total attempts."
-              palette={palette}
-              accent={palette.good}
-            />
-            <StatTile
-              label="Average Score"
-              value={`${Math.round(overall.averageScore)}%`}
-              helper="Average score for selected course attempts."
-              palette={palette}
-              accent={palette.accent}
-            />
+            {showPerSubjectInsights
+              ? insightsBySubject.map((item) => (
+                  <StatTile
+                    key={item.subject}
+                    label={item.subject}
+                    value={`${Math.round(item.accuracyPercentage)}%`}
+                    helper={`${item.correctAnswers}/${item.totalAttempts} correct attempts`}
+                    palette={palette}
+                    accent={palette.good}
+                  />
+                ))
+              : (
+                <>
+                  <StatTile
+                    label="Total Attempts"
+                    value={overall.totalAttempts}
+                    helper="All answered questions for this filter."
+                    palette={palette}
+                  />
+                  <StatTile
+                    label="Correct Answers"
+                    value={overall.correctAnswers}
+                    helper="Correct responses recorded."
+                    palette={palette}
+                  />
+                  <StatTile
+                    label="Accuracy"
+                    value={`${Math.round(overall.accuracyPercentage)}%`}
+                    helper="Correct answers divided by total attempts."
+                    palette={palette}
+                    accent={palette.good}
+                  />
+                  <StatTile
+                    label="Average Score"
+                    value={`${Math.round(overall.averageScore)}%`}
+                    helper="Average score for selected course attempts."
+                    palette={palette}
+                    accent={palette.accent}
+                  />
+                </>
+              )}
           </div>
 
           <div className="grid gap-6 xl:grid-cols-[1fr_1fr]">

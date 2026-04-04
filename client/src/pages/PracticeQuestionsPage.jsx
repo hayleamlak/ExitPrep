@@ -90,6 +90,7 @@ function PracticeQuestionsPage() {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState({});
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [revealedAnswers, setRevealedAnswers] = useState({});
   const [topicProgress, setTopicProgress] = useState({});
 
   const palette = isDark
@@ -228,6 +229,7 @@ function PracticeQuestionsPage() {
     setActiveTopicId("");
     setCurrentQuestionIndex(0);
     setSelectedAnswers({});
+    setRevealedAnswers({});
     setIsSubmitted(false);
     setSearch("");
   }, [quizMode]);
@@ -247,6 +249,7 @@ function PracticeQuestionsPage() {
   const activeQuestion = activeTopic?.questions?.[currentQuestionIndex] || null;
   const selectedAnswer = activeQuestion ? selectedAnswers[activeQuestion.id] : "";
   const hasAnsweredCurrentQuestion = Boolean(selectedAnswer);
+  const isCurrentQuestionRevealed = activeQuestion ? Boolean(revealedAnswers[activeQuestion.id]) : false;
 
   const score = useMemo(() => {
     if (!activeTopic) {
@@ -266,6 +269,7 @@ function PracticeQuestionsPage() {
     setActiveTopicId(topicId);
     setCurrentQuestionIndex(0);
     setSelectedAnswers({});
+    setRevealedAnswers({});
     setIsSubmitted(false);
   };
 
@@ -273,6 +277,7 @@ function PracticeQuestionsPage() {
     setActiveTopicId("");
     setCurrentQuestionIndex(0);
     setSelectedAnswers({});
+    setRevealedAnswers({});
     setIsSubmitted(false);
   };
 
@@ -293,6 +298,12 @@ function PracticeQuestionsPage() {
     }
 
     setIsSubmitted(true);
+    setRevealedAnswers(
+      activeTopic.questions.reduce((acc, question) => {
+        acc[question.id] = true;
+        return acc;
+      }, {})
+    );
     setTopicProgress((previous) => ({
       ...previous,
       [activeTopic.id]: activeTopic.total
@@ -316,9 +327,14 @@ function PracticeQuestionsPage() {
   };
 
   const handleNext = () => {
-    if (!activeTopic) {
+    if (!activeTopic || !activeQuestion) {
       return;
     }
+
+    setRevealedAnswers((previous) => ({
+      ...previous,
+      [activeQuestion.id]: true
+    }));
 
     setCurrentQuestionIndex((previous) => Math.min(previous + 1, activeTopic.questions.length - 1));
   };
@@ -471,15 +487,15 @@ function PracticeQuestionsPage() {
               const isCorrect = option === activeQuestion.correctAnswer;
 
               let optionClass = palette.optionButton;
-              if (!isSubmitted && isSelected) {
+              if (!isCurrentQuestionRevealed && isSelected) {
                 optionClass = palette.optionSelected;
               }
 
-              if (isSubmitted && isCorrect) {
+              if (isCurrentQuestionRevealed && isCorrect) {
                 optionClass = palette.optionCorrect;
               }
 
-              if (isSubmitted && isSelected && !isCorrect) {
+              if (isCurrentQuestionRevealed && isSelected && !isCorrect) {
                 optionClass = palette.optionWrong;
               }
 
@@ -496,7 +512,7 @@ function PracticeQuestionsPage() {
             })}
           </div>
 
-          {isSubmitted && hasAnsweredCurrentQuestion ? (
+          {isCurrentQuestionRevealed && hasAnsweredCurrentQuestion ? (
             <div className="mt-4 space-y-2">
               <p className={`text-sm font-semibold ${selectedAnswer === activeQuestion.correctAnswer ? palette.successText : palette.wrongText}`}>
                 {selectedAnswer === activeQuestion.correctAnswer
@@ -542,6 +558,17 @@ function PracticeQuestionsPage() {
               </button>
             </div>
           </div>
+
+          {isSubmitted ? (
+            <div className={`mt-4 rounded-xl border px-4 py-3 ${palette.listWrap}`}>
+              <p className={`text-base font-semibold ${palette.title}`}>
+                Total Mark: {score}/{activeTopic.questions.length}
+              </p>
+              <p className={`mt-1 text-sm ${palette.description}`}>
+                Percentage: {Math.round((score / activeTopic.questions.length) * 100)}%
+              </p>
+            </div>
+          ) : null}
         </div>
       ) : null}
     </section>

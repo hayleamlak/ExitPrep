@@ -5,7 +5,7 @@ import { useAuth } from "../context/AuthContext";
 const features = [
   {
     title: "Centralized Study Materials",
-    description: "Keep past papers, notes, and subject resources in one organized place.",
+    description: "Keep past papers, course materials, and subject resources in one organized place.",
     icon: BookOpen
   },
   {
@@ -28,7 +28,7 @@ const steps = [
   },
   {
     title: "Access study materials and practice questions",
-    description: "Open PDFs, review notes, and attempt practice sets from the dashboard.",
+    description: "Open PDFs, review course materials, and attempt practice sets from the dashboard.",
     icon: 2
   },
   {
@@ -130,7 +130,7 @@ function HomePage() {
                     </div>
                     <p className="mt-5 text-sm font-semibold uppercase tracking-[0.2em] text-slate-400">Study Hub</p>
                     <h3 className="mt-2 text-xl font-semibold text-slate-900">All resources in one place</h3>
-                    <p className="mt-2 text-sm leading-6 text-slate-600">Notes, tests, and past papers arranged for quick access.</p>
+                    <p className="mt-2 text-sm leading-6 text-slate-600">Course materials, tests, and past papers arranged for quick access.</p>
                   </article>
 
                   <article className="rounded-3xl border border-slate-200 bg-gradient-to-br from-violet-50 to-white p-5 shadow-sm">

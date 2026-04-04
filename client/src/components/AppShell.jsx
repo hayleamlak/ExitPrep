@@ -1,19 +1,19 @@
-import { BarChart3, BookOpen, ChevronLeft, CircleHelp, LayoutGrid, LogOut, Moon, Network, ShieldCheck, Sparkles, Sun, UserRound } from "lucide-react";
+import { BarChart3, BookOpen, ChevronLeft, CircleHelp, FileText, LayoutGrid, LogOut, Moon, Network, ShieldCheck, Sparkles, Sun, UserRound } from "lucide-react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 
 const studentItems = [
-  { to: "/app/study-notes", label: "Notes", icon: BookOpen },
+  { to: "/app/ai-assistant", label: "AI Hub", icon: Sparkles },
+  { to: "/app/study-notes", label: "Course", icon: BookOpen },
+  { to: "/app/course-notes", label: "Notes", icon: FileText },
   { to: "/app/practice-questions", label: "Questions", icon: LayoutGrid },
   { to: "/app/dashboard", label: "Insights", icon: BarChart3 }
 ];
 
 const adminItems = [{ to: "/app/admin", label: "Admin Panel", icon: ShieldCheck }];
 
-const guidanceItems = [
-  { to: "/app/ai-assistant", label: "AI Assistant", icon: Sparkles }
-];
+const guidanceItems = [];
 
 function NavSection({ title, items, isDark }) {
   return (
@@ -106,7 +106,7 @@ function AppShell() {
           </div>
 
           <NavSection title="Workspace" items={navigationItems} isDark={isDark} />
-          <NavSection title="Guidance" items={guidanceItems} isDark={isDark} />
+          {guidanceItems.length ? <NavSection title="Guidance" items={guidanceItems} isDark={isDark} /> : null}
 
           <div className={`mt-8 flex items-center justify-between rounded-xl border px-3 py-2 text-sm ${shellClasses.textSoft} ${shellClasses.card}`}>
             <span>Theme</span>

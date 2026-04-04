@@ -115,9 +115,9 @@ function StudyNotesPage() {
     <section className="space-y-6">
       <div className={`flex flex-wrap items-start justify-between gap-4 border-b pb-6 ${palette.divider}`}>
         <div>
-          <h1 className={`text-2xl sm:text-3xl font-bold tracking-tight ${palette.title}`}>Notes</h1>
+          <h1 className={`text-2xl sm:text-3xl font-bold tracking-tight ${palette.title}`}>Course</h1>
           <p className={`mt-1 text-sm sm:text-base ${palette.description}`}>
-            Structured PDF notes uploaded by admins.
+            Structured PDF course materials uploaded by admins.
           </p>
         </div>
 
@@ -135,11 +135,11 @@ function StudyNotesPage() {
         </label>
       </div>
 
-      {loading ? <p className={`text-sm ${palette.emptyText}`}>Loading notes...</p> : null}
+      {loading ? <p className={`text-sm ${palette.emptyText}`}>Loading course...</p> : null}
 
       <div className={`overflow-hidden rounded-2xl border ${palette.listWrap}`}>
         <div className={`hidden grid-cols-[minmax(240px,1.2fr)_minmax(210px,1fr)_120px_210px] gap-4 border-b px-5 py-3 text-xs font-semibold uppercase tracking-[0.16em] md:grid ${palette.rowDivider} ${palette.description}`}>
-          <span>PDF Note</span>
+          <span>PDF Course</span>
           <span>Course Info</span>
           <span>Downloads</span>
           <span>Actions</span>
@@ -197,7 +197,7 @@ function StudyNotesPage() {
 
         {!loading && filteredTopics.length === 0 ? (
           <p className={`px-4 py-6 text-sm md:px-5 ${palette.emptyText}`}>
-            No admin-uploaded PDF notes matched your search.
+            No admin-uploaded PDF course materials matched your search.
           </p>
         ) : null}
       </div>

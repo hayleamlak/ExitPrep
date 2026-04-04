@@ -1,5 +1,6 @@
 const User = require("../models/User");
 const AIAnalytics = require("../models/AIAnalytics");
+const Attempt = require("../models/Attempt");
 const { toAverageMap, weakSubjectsFromScores } = require("../utils/analytics");
 const { generateRecommendation } = require("../services/huggingFace");
 const { callAI } = require("../services/aiProvider");
@@ -38,6 +39,41 @@ function extractJsonObject(text) {
   return null;
 }
 
+async function callAIWithFallback(options) {
+  try {
+    return await callAI(options);
+  } catch (_error) {
+    return {
+      text: "",
+      meta: {
+        provider: "local-fallback",
+        model: "deterministic"
+      }
+    };
+  }
+}
+
+function buildFallbackQuiz({ subject, topic, count }) {
+  const safeCount = Math.max(1, Math.min(10, Number(count || 5)));
+  return Array.from({ length: safeCount }, (_, index) => {
+    const questionNumber = index + 1;
+    const questionText = `[${subject}] ${topic} practice question ${questionNumber}: Which option best matches the core concept?`;
+    const options = [
+      `${topic} main principle`,
+      `${topic} unrelated rule`,
+      "A random fact",
+      "None of the above"
+    ];
+
+    return {
+      questionText,
+      options,
+      correctAnswer: options[0],
+      explanation: `The first option reflects the main principle typically tested for ${topic}.`
+    };
+  });
+}
+
 function normalizeTopicPerformance(items) {
   if (!Array.isArray(items)) {
     return [];
@@ -49,6 +85,230 @@ function normalizeTopicPerformance(items) {
       accuracy: Number(item?.accuracy || item?.accuracyPercentage || 0)
     }))
     .filter((item) => item.topic);
+}
+
+function normalizeTopicList(items) {
+  if (!Array.isArray(items)) {
+    return [];
+  }
+
+  return items
+    .map((item) => String(item || "").trim())
+    .filter(Boolean)
+    .slice(0, 10);
+}
+
+function normalizePreferredStudyTime(value) {
+  const normalized = typeof value === "string" ? value.trim().toLowerCase() : "";
+  if (["morning", "afternoon", "evening", "night"].includes(normalized)) {
+    return normalized;
+  }
+  return "evening";
+}
+
+function toSafeNumber(value, fallback = 0) {
+  const num = Number(value);
+  return Number.isFinite(num) ? num : fallback;
+}
+
+function estimateTrendLabel(scores = []) {
+  if (!Array.isArray(scores) || scores.length < 2) {
+    return "stable";
+  }
+
+  const first = toSafeNumber(scores[0], 0);
+  const last = toSafeNumber(scores[scores.length - 1], first);
+  const delta = last - first;
+
+  if (delta >= 8) {
+    return "improving";
+  }
+
+  if (delta <= -8) {
+    return "declining";
+  }
+
+  return "stable";
+}
+
+function buildWeeklySchedule({
+  hoursPerWeek,
+  weakTopics,
+  completedChapters,
+  preferredStudyTime,
+  quizScores,
+  examDate
+}) {
+  const weekDays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+  const weak = Array.isArray(weakTopics) && weakTopics.length ? weakTopics : ["Core weak topic", "Secondary weak topic"];
+  const completed = Array.isArray(completedChapters) && completedChapters.length
+    ? completedChapters
+    : ["Recent completed chapter"];
+  const trend = estimateTrendLabel(quizScores);
+  const examHint = examDate ? `Target exam date: ${examDate}.` : "No exam date set yet.";
+
+  const totalMinutes = Math.max(60, Math.round(Number(hoursPerWeek || 8) * 60));
+  const base = Math.floor(totalMinutes / 7);
+  const remainder = totalMinutes - (base * 7);
+
+  return weekDays.map((day, index) => {
+    const durationMinutes = base + (index < remainder ? 1 : 0);
+    const weakTopic = weak[index % weak.length];
+    const reinforcementTopic = completed[index % completed.length];
+
+    if (index === 5) {
+      return {
+        day,
+        durationMinutes,
+        focus: "Mock quiz and error log",
+        studyTime: preferredStudyTime,
+        tasks: [
+          `Take a timed mixed quiz (${trend === "declining" ? "25" : "30"} questions).`,
+          "Review every wrong answer and write the exact reason.",
+          `Revise ${weakTopic} with short notes and one recall sheet.`,
+          examHint
+        ]
+      };
+    }
+
+    if (index === 6) {
+      return {
+        day,
+        durationMinutes,
+        focus: "Weekly review and planning",
+        studyTime: preferredStudyTime,
+        tasks: [
+          "Retake 10-15 questions from your weakest areas.",
+          `Summarize gains in ${weakTopic} and gaps in ${reinforcementTopic}.`,
+          "Plan the next week using your latest weak-topic errors.",
+          examHint
+        ]
+      };
+    }
+
+    return {
+      day,
+      durationMinutes,
+      focus: weakTopic,
+      studyTime: preferredStudyTime,
+      tasks: [
+        `Read and annotate notes for ${weakTopic} (20-30 minutes).`,
+        `Solve 15-20 focused questions on ${weakTopic}.`,
+        `Spend 15 minutes revising one strong area: ${reinforcementTopic}.`,
+        trend === "declining"
+          ? "Finish with a quick active-recall drill before ending the session."
+          : "Finish with 5 flashcard or recall prompts from today's errors."
+      ]
+    };
+  });
+}
+
+function normalizeWeeklySchedule(items, fallback) {
+  if (!Array.isArray(items) || items.length < 7) {
+    return fallback;
+  }
+
+  return items.slice(0, 7).map((item, index) => {
+    const fallbackDay = fallback[index] || { day: `Day ${index + 1}`, durationMinutes: 60, focus: "Study", tasks: [] };
+    return {
+      day: typeof item?.day === "string" && item.day.trim() ? item.day.trim() : fallbackDay.day,
+      durationMinutes: Math.max(20, Math.round(toSafeNumber(item?.durationMinutes, fallbackDay.durationMinutes))),
+      focus: typeof item?.focus === "string" && item.focus.trim() ? item.focus.trim() : fallbackDay.focus,
+      studyTime: typeof item?.studyTime === "string" && item.studyTime.trim() ? item.studyTime.trim() : fallbackDay.studyTime,
+      tasks: Array.isArray(item?.tasks)
+        ? item.tasks.map((task) => String(task || "").trim()).filter(Boolean).slice(0, 6)
+        : fallbackDay.tasks
+    };
+  });
+}
+
+function chunkScores(attempts, chunkSize = 10) {
+  if (!Array.isArray(attempts) || attempts.length === 0) {
+    return [];
+  }
+
+  const ordered = attempts.slice().reverse();
+  const chunks = [];
+
+  for (let i = 0; i < ordered.length; i += chunkSize) {
+    const chunk = ordered.slice(i, i + chunkSize);
+    const correct = chunk.filter((item) => item.isCorrect).length;
+    const accuracy = Number(((correct / chunk.length) * 100).toFixed(2));
+    chunks.push(accuracy);
+  }
+
+  return chunks.slice(-6);
+}
+
+async function derivePerformanceSnapshot({ userId, requestedCourse = "", minutesPerAttempt = 2 }) {
+  const baseMatch = { userId };
+  const courseMatch = requestedCourse ? { ...baseMatch, course: requestedCourse } : baseMatch;
+
+  const [allCourseStats, topicStats, recentAttempts] = await Promise.all([
+    Attempt.aggregate([
+      { $match: baseMatch },
+      { $group: { _id: "$course", attempts: { $sum: 1 } } },
+      { $sort: { attempts: -1, _id: 1 } }
+    ]),
+    Attempt.aggregate([
+      { $match: courseMatch },
+      {
+        $group: {
+          _id: "$topic",
+          attempts: { $sum: 1 },
+          correct: {
+            $sum: {
+              $cond: [{ $eq: ["$isCorrect", true] }, 1, 0]
+            }
+          }
+        }
+      },
+      { $sort: { attempts: -1, _id: 1 } }
+    ]),
+    Attempt.find(courseMatch)
+      .sort({ createdAt: -1 })
+      .limit(60)
+      .select("isCorrect")
+      .lean()
+  ]);
+
+  const selectedCourse = requestedCourse || allCourseStats[0]?._id || "General";
+
+  const normalizedTopicStats = topicStats.map((item) => {
+    const accuracy = item.attempts ? Number(((item.correct / item.attempts) * 100).toFixed(2)) : 0;
+    return {
+      topic: item._id || "General",
+      attempts: item.attempts,
+      correct: item.correct,
+      accuracy
+    };
+  });
+
+  const completedChapters = normalizedTopicStats
+    .filter((item) => item.attempts >= 3 && item.accuracy >= 70)
+    .map((item) => item.topic)
+    .slice(0, 8);
+
+  const weakTopics = normalizedTopicStats
+    .filter((item) => item.accuracy < 60)
+    .sort((a, b) => a.accuracy - b.accuracy || b.attempts - a.attempts)
+    .map((item) => item.topic)
+    .slice(0, 8);
+
+  const quizScores = chunkScores(recentAttempts, 10);
+  const estimatedStudyMinutes = Math.max(0, Number(minutesPerAttempt || 2) * recentAttempts.length);
+
+  return {
+    courseName: selectedCourse,
+    completedChapters,
+    weakTopics,
+    quizScores,
+    studyTime: {
+      minutes: estimatedStudyMinutes,
+      hours: Number((estimatedStudyMinutes / 60).toFixed(2)),
+      source: "estimated_from_attempts"
+    }
+  };
 }
 
 async function summarizeNotes(req, res) {
@@ -69,7 +329,7 @@ async function summarizeNotes(req, res) {
       `Content:\n${text}`
     ].join("\n\n");
 
-    const ai = await callAI({ systemPrompt, userPrompt, jsonMode: true, maxTokens: 800 });
+    const ai = await callAIWithFallback({ systemPrompt, userPrompt, jsonMode: true, maxTokens: 800 });
     const parsed = extractJsonObject(ai.text);
 
     const fallback = {
@@ -96,18 +356,29 @@ async function generateQuiz(req, res) {
     const topic = typeof req.body?.topic === "string" && req.body.topic.trim() ? req.body.topic.trim() : subject;
     const difficulty = typeof req.body?.difficulty === "string" ? req.body.difficulty.trim().toLowerCase() : "medium";
     const count = Math.max(1, Math.min(10, Number(req.body?.count || 5)));
+    const sourceText = typeof req.body?.sourceText === "string" ? req.body.sourceText.trim() : "";
+    const sourceExcerpt = sourceText ? sourceText.slice(0, 5000) : "";
 
     const systemPrompt = "You create multiple-choice questions for exit exam preparation.";
-    const userPrompt = [
+    const promptParts = [
       `Subject: ${subject}`,
       `Topic: ${topic}`,
       `Difficulty: ${difficulty}`,
       `Generate ${count} questions.`,
       "Return JSON: { questions: [{ questionText, options: [4], correctAnswer, explanation }] }.",
       "correctAnswer must match one option exactly."
-    ].join("\n");
+    ];
 
-    const ai = await callAI({ systemPrompt, userPrompt, jsonMode: true, maxTokens: 1200 });
+    if (sourceExcerpt) {
+      promptParts.push(
+        "Use the source material below as the primary reference for question generation.",
+        `Source material:\n${sourceExcerpt}`
+      );
+    }
+
+    const userPrompt = promptParts.join("\n\n");
+
+    const ai = await callAIWithFallback({ systemPrompt, userPrompt, jsonMode: true, maxTokens: 1200 });
     const parsed = extractJsonObject(ai.text);
     const rawQuestions = Array.isArray(parsed?.questions) ? parsed.questions : [];
 
@@ -122,7 +393,9 @@ async function generateQuiz(req, res) {
       }))
       .filter((item) => item.questionText && item.options.length === 4 && item.correctAnswer && item.options.includes(item.correctAnswer));
 
-    return res.json({ ok: true, feature: "quiz", data: { questions }, meta: { ...ai.meta, createdAt: new Date().toISOString() } });
+    const resolvedQuestions = questions.length ? questions : buildFallbackQuiz({ subject, topic, count });
+
+    return res.json({ ok: true, feature: "quiz", data: { questions: resolvedQuestions }, meta: { ...ai.meta, createdAt: new Date().toISOString() } });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
@@ -148,7 +421,7 @@ async function explainAnswer(req, res) {
       "Return JSON with keys: whyCorrect (string), whyStudentAnswer (string), memoryTip (string)."
     ].join("\n\n");
 
-    const ai = await callAI({ systemPrompt, userPrompt, jsonMode: true, maxTokens: 500 });
+    const ai = await callAIWithFallback({ systemPrompt, userPrompt, jsonMode: true, maxTokens: 500 });
     const parsed = extractJsonObject(ai.text);
 
     const data = {
@@ -178,7 +451,7 @@ async function recommendWeakTopics(req, res) {
       "Return JSON with keys: priorities (array of { topic, action, practiceCount })."
     ].join("\n\n");
 
-    const ai = await callAI({ systemPrompt, userPrompt, jsonMode: true, maxTokens: 700 });
+    const ai = await callAIWithFallback({ systemPrompt, userPrompt, jsonMode: true, maxTokens: 700 });
     const parsed = extractJsonObject(ai.text);
     const priorities = Array.isArray(parsed?.priorities) ? parsed.priorities : weakTopics.map((item) => ({
       topic: item.topic,
@@ -196,25 +469,105 @@ async function generateStudyPlan(req, res) {
   try {
     const hoursPerWeek = Math.max(1, Number(req.body?.hoursPerWeek || 8));
     const examDate = typeof req.body?.examDate === "string" ? req.body.examDate : "";
-    const weakTopics = Array.isArray(req.body?.weakTopics)
-      ? req.body.weakTopics.map((item) => String(item).trim()).filter(Boolean).slice(0, 8)
+    const weakTopicsInput = normalizeTopicList(req.body?.weakTopics);
+    const preferredStudyTime = normalizePreferredStudyTime(req.body?.preferredStudyTime);
+    const courseNameInput = typeof req.body?.courseName === "string" ? req.body.courseName.trim() : "";
+    const completedInput = normalizeTopicList(req.body?.completedChapters);
+    const quizScoresInput = Array.isArray(req.body?.quizScores)
+      ? req.body.quizScores.map((item) => Number(item)).filter((item) => Number.isFinite(item)).slice(0, 10)
       : [];
-    const preferredStudyTime = typeof req.body?.preferredStudyTime === "string" ? req.body.preferredStudyTime.trim() : "evening";
+    const timeSpentInput = typeof req.body?.timeSpent === "string" ? req.body.timeSpent.trim() : "";
+    const autoFromAttempts = req.body?.autoFromAttempts !== false;
 
-    const systemPrompt = "You are an exit exam planner. Build practical, realistic weekly plans.";
+    let autoSnapshot = null;
+    if (autoFromAttempts) {
+      autoSnapshot = await derivePerformanceSnapshot({
+        userId: req.user.id,
+        requestedCourse: courseNameInput,
+        minutesPerAttempt: Number(req.body?.minutesPerAttempt || 2)
+      });
+    }
+
+    const courseName = courseNameInput || autoSnapshot?.courseName || "General";
+    const completedChapters = completedInput.length ? completedInput : autoSnapshot?.completedChapters || [];
+    const weakTopics = weakTopicsInput.length ? weakTopicsInput : autoSnapshot?.weakTopics || [];
+    const quizScores = quizScoresInput.length ? quizScoresInput : autoSnapshot?.quizScores || [];
+    const studyTime = timeSpentInput || (autoSnapshot
+      ? `${autoSnapshot.studyTime.hours} hours total (${autoSnapshot.studyTime.minutes} minutes, estimated from attempts)`
+      : "Not provided");
+    const trend = estimateTrendLabel(quizScores);
+    const weeklyScheduleFallback = buildWeeklySchedule({
+      hoursPerWeek,
+      weakTopics,
+      completedChapters,
+      preferredStudyTime,
+      quizScores,
+      examDate
+    });
+
+    const systemPrompt = "You are an AI Study Coach for university students. Make plans specific, simple, and actionable.";
     const userPrompt = [
-      `Hours per week: ${hoursPerWeek}`,
-      `Exam date: ${examDate || "Not provided"}`,
-      `Weak topics: ${weakTopics.join(", ") || "General revision"}`,
-      `Preferred time: ${preferredStudyTime}`,
-      "Return JSON with key plan (array of 7 items). Each item: { day, durationMinutes, focus, tasks }"
+      "Analyze the student's performance data:",
+      `- Course: ${courseName}`,
+      `- Completed chapters: ${completedChapters.join(", ") || "None yet"}`,
+      `- Weak topics: ${weakTopics.join(", ") || "General revision"}`,
+      `- Quiz scores: ${quizScores.join(", ") || "No quiz history"}`,
+      `- Study time: ${studyTime}`,
+      "",
+      "Generate a personalized study plan that includes:",
+      "1. Clear explanation of what the student should do",
+      "2. Why these topics are important",
+      "3. What the student will achieve after completing the plan",
+      "4. Weekly study schedule (exactly 7 days)",
+      "5. Focus areas based on weak performance",
+      "6. Specific actions (read notes, practice quizzes, revise topics)",
+      "",
+      `Additional constraints: hoursPerWeek=${hoursPerWeek}, preferredStudyTime=${preferredStudyTime}, examDate=${examDate || "Not provided"}`,
+      "Return strict JSON with keys:",
+      "explanation (string),",
+      "importance (string[]),",
+      "outcomes (string[]),",
+      "weeklySchedule (array of exactly 7 items; each item has day, durationMinutes, focus, studyTime, tasks[]),",
+      "focusAreas (string[]),",
+      "specificActions (string[]).",
+      "Avoid generic advice."
     ].join("\n\n");
 
-    const ai = await callAI({ systemPrompt, userPrompt, jsonMode: true, maxTokens: 900 });
+    const ai = await callAIWithFallback({ systemPrompt, userPrompt, jsonMode: true, maxTokens: 900 });
     const parsed = extractJsonObject(ai.text);
-    const plan = Array.isArray(parsed?.plan) ? parsed.plan.slice(0, 7) : [];
 
-    return res.json({ ok: true, feature: "study-plan", data: { plan }, meta: { ...ai.meta, createdAt: new Date().toISOString() } });
+    const weeklySchedule = normalizeWeeklySchedule(parsed?.weeklySchedule || parsed?.dailySchedule, weeklyScheduleFallback);
+
+    const data = {
+      explanation: typeof parsed?.explanation === "string"
+        ? parsed.explanation
+        : `Study ${weakTopics.join(", ") || "your weakest topics"} first, then reinforce with timed mixed practice.` ,
+      importance: Array.isArray(parsed?.importance) ? parsed.importance.slice(0, 8) : ["Weak topics reduce overall exam performance if left unaddressed."],
+      outcomes: Array.isArray(parsed?.outcomes) ? parsed.outcomes.slice(0, 8) : ["Higher accuracy and stronger retention for exam questions."],
+      weeklySchedule,
+      dailySchedule: weeklySchedule,
+      focusAreas: Array.isArray(parsed?.focusAreas) ? parsed.focusAreas.slice(0, 10) : weakTopics,
+      specificActions: Array.isArray(parsed?.specificActions)
+        ? parsed.specificActions.slice(0, 12)
+        : ["Read notes", "Practice quizzes", "Revise weak topics", "Track incorrect answers"],
+      performanceSummary: {
+        trend,
+        weakTopicCount: weakTopics.length,
+        completedChapterCount: completedChapters.length,
+        studyHoursPerWeek: hoursPerWeek,
+        preferredStudyTime
+      },
+      autoData: {
+        courseName,
+        completedChapters,
+        weakTopics,
+        quizScores,
+        studyTime,
+        fromAttempts: Boolean(autoSnapshot)
+      }
+    };
+
+    return res.json({ ok: true, feature: "study-plan", data, meta: { ...ai.meta, createdAt: new Date().toISOString() } });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }

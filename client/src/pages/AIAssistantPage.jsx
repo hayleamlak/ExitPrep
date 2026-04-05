@@ -503,6 +503,13 @@ function AIAssistantPage() {
               <p className={`mt-2 typo-body-relaxed ${palette.page}`}>{summary.shortSummary || "No summary text returned."}</p>
             </div>
 
+            <div>
+              <p className={`text-xs font-semibold uppercase tracking-[0.2em] ${palette.meta}`}>Detailed Summary</p>
+              <p className={`mt-2 typo-body-relaxed ${palette.page}`}>
+                {summary.detailedSummary || "No detailed summary returned."}
+              </p>
+            </div>
+
             <div className="grid gap-4 md:grid-cols-2">
               <div>
                 <p className={`text-xs font-semibold uppercase tracking-[0.2em] ${palette.meta}`}>Key Points</p>
@@ -518,6 +525,46 @@ function AIAssistantPage() {
                 <ul className={`mt-2 space-y-1 text-sm ${palette.page}`}>
                   {(Array.isArray(summary.examTips) ? summary.examTips : []).map((item, index) => (
                     <li key={`tip-${index}`}>- {item}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <p className={`text-xs font-semibold uppercase tracking-[0.2em] ${palette.meta}`}>Core Concepts</p>
+                <ul className={`mt-2 space-y-1 text-sm ${palette.page}`}>
+                  {(Array.isArray(summary.coreConcepts) ? summary.coreConcepts : []).map((item, index) => (
+                    <li key={`concept-${index}`}>- {item}</li>
+                  ))}
+                </ul>
+              </div>
+
+              <div>
+                <p className={`text-xs font-semibold uppercase tracking-[0.2em] ${palette.meta}`}>Worked Examples</p>
+                <ul className={`mt-2 space-y-1 text-sm ${palette.page}`}>
+                  {(Array.isArray(summary.workedExamples) ? summary.workedExamples : []).map((item, index) => (
+                    <li key={`example-${index}`}>- {item}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <p className={`text-xs font-semibold uppercase tracking-[0.2em] ${palette.meta}`}>Common Mistakes</p>
+                <ul className={`mt-2 space-y-1 text-sm ${palette.page}`}>
+                  {(Array.isArray(summary.commonMistakes) ? summary.commonMistakes : []).map((item, index) => (
+                    <li key={`mistake-${index}`}>- {item}</li>
+                  ))}
+                </ul>
+              </div>
+
+              <div>
+                <p className={`text-xs font-semibold uppercase tracking-[0.2em] ${palette.meta}`}>Quick Practice Tasks</p>
+                <ul className={`mt-2 space-y-1 text-sm ${palette.page}`}>
+                  {(Array.isArray(summary.quickPractice) ? summary.quickPractice : []).map((item, index) => (
+                    <li key={`practice-${index}`}>- {item}</li>
                   ))}
                 </ul>
               </div>

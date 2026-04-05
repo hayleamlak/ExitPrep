@@ -87,6 +87,71 @@ function normalizeTopicPerformance(items) {
     .filter((item) => item.topic);
 }
 
+function normalizeChatHistory(items) {
+  if (!Array.isArray(items)) {
+    return [];
+  }
+
+  return items
+    .map((item) => ({
+      role: item?.role === "assistant" ? "assistant" : "user",
+      content: typeof item?.content === "string" ? item.content.trim() : ""
+    }))
+    .filter((item) => item.content)
+    .slice(-10);
+}
+
+function generateDeterministicChatReply(message, history = []) {
+  const text = String(message || "").trim();
+  const lower = text.toLowerCase();
+  const recentUserMessages = history
+    .filter((item) => item.role === "user")
+    .map((item) => item.content.toLowerCase())
+    .slice(-4);
+
+  const isGreeting = /\b(hi|hello|hey|selam|good morning|good evening|how are you)\b/i.test(lower);
+  if (isGreeting) {
+    return "I am doing well and ready to help. Tell me your subject, your current level, and your exam timeline, and I will build a focused study plan for you.";
+  }
+
+  const wantsToStudy = /\b(i want to study|study|learn|prepare|revision|review)\b/i.test(lower);
+  const databaseMentioned = /\b(database|dbms|sql|normalization|entity relationship|er diagram)\b/i.test(lower)
+    || recentUserMessages.some((item) => /\b(database|dbms|sql)\b/i.test(item));
+
+  if (wantsToStudy && databaseMentioned) {
+    return [
+      "Great choice. Here is a practical Database study path:",
+      "1) Core concepts: DBMS basics, ER model, relational model, keys, constraints.",
+      "2) SQL mastery: SELECT, JOIN, GROUP BY, subqueries, INSERT/UPDATE/DELETE.",
+      "3) Design topics: normalization (1NF-3NF/BCNF), schema design, transactions, ACID.",
+      "4) Practice loop: 20 SQL questions daily + 1 timed mixed quiz every 2 days.",
+      "5) Error review: keep a mistake log and revise weak areas every weekend.",
+      "If you want, I can generate a 7-day Database plan right now based on your available hours."
+    ].join("\n");
+  }
+
+  if (databaseMentioned) {
+    return [
+      "For Database, start with this order:",
+      "- Day 1-2: ER diagrams, keys, constraints",
+      "- Day 3-4: SQL queries and joins",
+      "- Day 5: normalization + transactions",
+      "- Day 6-7: past questions + weak-area review",
+      "Share your available hours per week and I will tailor this into a precise schedule."
+    ].join("\n");
+  }
+
+  if (/\b(quiz|question|practice)\b/i.test(lower)) {
+    return "I can generate targeted practice for you. Tell me: subject, topic, difficulty (easy/medium/hard), and number of questions.";
+  }
+
+  if (/\b(summary|summarize|note)\b/i.test(lower)) {
+    return "I can help summarize your material into key points, core concepts, common mistakes, and quick practice tasks. Upload/select your note, then click Summarize Note.";
+  }
+
+  return "I can help with study plans, concept explanations, summaries, and quiz practice. Tell me your subject and goal, for example: 'I want a 7-day database study plan for 10 hours/week'.";
+}
+
 function normalizeTopicList(items) {
   if (!Array.isArray(items)) {
     return [];
@@ -320,12 +385,22 @@ async function summarizeNotes(req, res) {
       return res.status(400).json({ message: "text is required" });
     }
 
-    const systemPrompt = "You are an exam prep tutor for Ethiopian university students. Keep responses concise and practical.";
+    const systemPrompt = "You are an exam prep tutor for Ethiopian university students. Keep responses practical, specific, and easy to study from.";
     const userPrompt = [
       `Subject: ${subject}`,
       "Summarize the study content below.",
-      "Return JSON with keys: shortSummary (string), keyPoints (string[]), examTips (string[]).",
+      "Return JSON with keys:",
+      "shortSummary (string),",
+      "detailedSummary (string),",
+      "keyPoints (string[]),",
+      "coreConcepts (string[]),",
+      "workedExamples (string[]),",
+      "commonMistakes (string[]),",
+      "quickPractice (string[]),",
+      "examTips (string[]).",
       "Keep language simple and student-friendly.",
+      "Make each array specific to the provided subject content. Avoid generic points.",
+      "Target 5-8 items for keyPoints/coreConcepts, and 3-6 items for the other arrays.",
       `Content:\n${text}`
     ].join("\n\n");
 
@@ -334,14 +409,66 @@ async function summarizeNotes(req, res) {
 
     const fallback = {
       shortSummary: text.slice(0, 280),
-      keyPoints: ["Review definitions", "Practice with examples", "Revisit weak areas"],
-      examTips: ["Use active recall", "Solve timed questions", "Track mistakes after each session"]
+      detailedSummary: `This content covers core ideas in ${subject}. Focus on understanding the main definitions, how each method works step by step, and where each method is most effective. Then verify your understanding by solving mixed practice questions and reviewing errors to fix weak areas.`,
+      keyPoints: [
+        `Identify the main objectives and problem types in ${subject}.`,
+        "Understand the key terms and when each concept should be applied.",
+        "Compare approaches by efficiency, constraints, and expected output.",
+        "Practice interpreting question wording to choose the right method.",
+        "Review mistakes and convert them into short revision notes."
+      ],
+      coreConcepts: [
+        "Definitions and notation",
+        "Main techniques and selection criteria",
+        "Step-by-step reasoning process",
+        "Complexity or efficiency trade-offs",
+        "Edge cases and correctness checks"
+      ],
+      workedExamples: [
+        "Solve one easy example and explain each step in plain language.",
+        "Solve one medium example and justify why the chosen method fits.",
+        "Rework one past incorrect question and identify what changed."
+      ],
+      commonMistakes: [
+        "Choosing a method without checking constraints.",
+        "Skipping edge-case validation before final answer.",
+        "Memorizing formulas without understanding when to apply them.",
+        "Not reviewing incorrect answers after practice."
+      ],
+      quickPractice: [
+        "Attempt 10 timed questions focused on one technique.",
+        "Summarize each incorrect answer in one sentence.",
+        "Repeat a mixed 15-question set and track score improvement."
+      ],
+      examTips: [
+        "Start with questions you can classify quickly by method.",
+        "Write brief steps before full solution to avoid logic mistakes.",
+        "Leave 10-15 minutes for reviewing edge cases and final checks."
+      ]
+    };
+
+    const safeArray = (value, fallbackItems, maxItems) => {
+      if (!Array.isArray(value)) {
+        return fallbackItems;
+      }
+
+      const normalized = value
+        .map((item) => String(item || "").trim())
+        .filter(Boolean)
+        .slice(0, maxItems);
+
+      return normalized.length ? normalized : fallbackItems;
     };
 
     const data = {
       shortSummary: typeof parsed?.shortSummary === "string" ? parsed.shortSummary : fallback.shortSummary,
-      keyPoints: Array.isArray(parsed?.keyPoints) ? parsed.keyPoints.slice(0, 7) : fallback.keyPoints,
-      examTips: Array.isArray(parsed?.examTips) ? parsed.examTips.slice(0, 5) : fallback.examTips
+      detailedSummary: typeof parsed?.detailedSummary === "string" ? parsed.detailedSummary : fallback.detailedSummary,
+      keyPoints: safeArray(parsed?.keyPoints, fallback.keyPoints, 8),
+      coreConcepts: safeArray(parsed?.coreConcepts, fallback.coreConcepts, 8),
+      workedExamples: safeArray(parsed?.workedExamples, fallback.workedExamples, 6),
+      commonMistakes: safeArray(parsed?.commonMistakes, fallback.commonMistakes, 6),
+      quickPractice: safeArray(parsed?.quickPractice, fallback.quickPractice, 6),
+      examTips: safeArray(parsed?.examTips, fallback.examTips, 6)
     };
 
     return res.json({ ok: true, feature: "summarize", data, meta: { ...ai.meta, createdAt: new Date().toISOString() } });
@@ -431,6 +558,51 @@ async function explainAnswer(req, res) {
     };
 
     return res.json({ ok: true, feature: "explain", data, meta: { ...ai.meta, createdAt: new Date().toISOString() } });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+}
+
+async function chatAssistant(req, res) {
+  try {
+    const message = typeof req.body?.message === "string" ? req.body.message.trim() : "";
+    const history = normalizeChatHistory(req.body?.history);
+
+    if (!message) {
+      return res.status(400).json({ message: "message is required" });
+    }
+
+    const historyBlock = history.length
+      ? history.map((item) => `${item.role}: ${item.content}`).join("\n")
+      : "No prior messages.";
+
+    const systemPrompt = [
+      "You are ExitPrep Assistant, an AI chatbot for Ethiopian university exit-exam students.",
+      "Be conversational like ChatGPT, accurate, and practical.",
+      "Use concise paragraphs or bullet points when helpful.",
+      "If the user asks non-study questions, still reply helpfully and politely."
+    ].join(" ");
+
+    const userPrompt = [
+      "Conversation history:",
+      historyBlock,
+      "",
+      `Latest user message: ${message}`,
+      "",
+      "Write a direct helpful reply. Keep under 220 words unless the user explicitly asks for deep detail."
+    ].join("\n");
+
+    const ai = await callAIWithFallback({ systemPrompt, userPrompt, maxTokens: 700 });
+
+    const aiText = typeof ai?.text === "string" ? ai.text.trim() : "";
+    const reply = aiText || generateDeterministicChatReply(message, history);
+
+    return res.json({
+      ok: true,
+      feature: "chat",
+      data: { reply },
+      meta: { ...ai.meta, createdAt: new Date().toISOString() }
+    });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
@@ -648,6 +820,7 @@ module.exports = {
   addActivity,
   summarizeNotes,
   generateQuiz,
+  chatAssistant,
   explainAnswer,
   recommendWeakTopics,
   generateStudyPlan

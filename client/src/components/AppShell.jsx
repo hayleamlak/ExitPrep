@@ -2,6 +2,7 @@ import { BarChart3, BookOpen, FileText, LayoutGrid, Network, ShieldCheck, Sparkl
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
+import FloatingChatWidget from "./FloatingChatWidget";
 
 const studentItems = [
   { to: "/app/ai-assistant", label: "AI Hub", icon: Sparkles },
@@ -118,6 +119,8 @@ function AppShell() {
             <Outlet />
           </main>
         </div>
+
+        <FloatingChatWidget />
       </div>
     </div>
   );

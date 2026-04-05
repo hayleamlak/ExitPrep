@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertTriangle,
   BarChart3,
@@ -14,6 +14,7 @@ import {
   PenSquare,
   LogOut,
   Moon,
+  RefreshCcw,
   Search,
   ShieldCheck,
   Sparkles,
@@ -22,6 +23,21 @@ import {
   Sun,
   Users
 } from "lucide-react";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Legend,
+  Line,
+  LineChart,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis
+} from "recharts";
 import api from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
@@ -64,9 +80,11 @@ function AdminPanelPage() {
   const [questionUploadProgress, setQuestionUploadProgress] = useState(0);
   const [questionUploadState, setQuestionUploadState] = useState("");
   const [status, setStatus] = useState("");
+  const [lastUpdatedAt, setLastUpdatedAt] = useState(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [sectionErrors, setSectionErrors] = useState({ users: "", resources: "", questions: "", exams: "" });
+  const [sectionErrors, setSectionErrors] = useState({ users: "", resources: "", questions: "", exams: "", analytics: "" });
   const [filter, setFilter] = useState("");
   const [users, setUsers] = useState([]);
   const [resources, setResources] = useState([]);
@@ -158,6 +176,30 @@ function AdminPanelPage() {
     return sorted[0]?.title || "No resources yet";
   }, [resources]);
 
+  const managedCourses = useMemo(() => {
+    const map = new Map();
+
+    resources.forEach((resource) => {
+      const name = (resource.course || "").trim();
+      if (!name) return;
+
+      const current = map.get(name) || { name, resources: 0, questions: 0 };
+      current.resources += 1;
+      map.set(name, current);
+    });
+
+    questions.forEach((question) => {
+      const name = (question.subject || "").trim();
+      if (!name) return;
+
+      const current = map.get(name) || { name, resources: 0, questions: 0 };
+      current.questions += 1;
+      map.set(name, current);
+    });
+
+    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [questions, resources]);
+
   const filteredUsers = useMemo(() => {
     const term = filter.toLowerCase();
     return users.filter((entry) => {
@@ -168,67 +210,183 @@ function AdminPanelPage() {
 
   const activeSectionTitle = adminFeatureNav.find((entry) => entry.id === activeSection)?.label || "Admin";
 
-  useEffect(() => {
-    const loadData = async () => {
-      setLoading(true);
-      setError("");
-      setSectionErrors({ users: "", resources: "", questions: "", exams: "" });
+  const chartColors = isDark
+    ? ["#22d3ee", "#f59e0b", "#34d399", "#a78bfa", "#f87171", "#60a5fa"]
+    : ["#0284c7", "#f59e0b", "#059669", "#7c3aed", "#dc2626", "#2563eb"];
 
-      try {
-        const [overviewRes, usersRes, resourcesRes, questionsRes, examsRes] = await Promise.allSettled([
-          api.get("/admin/overview"),
-          api.get("/admin/users"),
-          api.get("/resources"),
-          api.get("/questions"),
-          api.get("/exams")
-        ]);
+  const userStatusPieData = useMemo(() => {
+    const totalUsers = overview?.totalUsers ?? users.length;
+    const suspendedUsers = overview?.suspendedUsers ?? users.filter((entry) => entry.isSuspended).length;
+    const activeUsers = Math.max(totalUsers - suspendedUsers, 0);
 
-        if (overviewRes.status === "fulfilled") {
-          setOverview(overviewRes.value.data || null);
-        }
+    return [
+      { name: "Active", value: activeUsers },
+      { name: "Suspended", value: suspendedUsers }
+    ];
+  }, [overview, users]);
 
-        if (usersRes.status === "fulfilled") {
-          setUsers(Array.isArray(usersRes.value.data) ? usersRes.value.data : []);
-        } else {
-          setSectionErrors((current) => ({
-            ...current,
-            users: usersRes.reason?.response?.data?.message || "Users data could not be loaded."
-          }));
-        }
+  const quizResultBandsData = useMemo(() => {
+    const ranges = [
+      { label: "0-39%", min: 0, max: 39, value: 0 },
+      { label: "40-59%", min: 40, max: 59, value: 0 },
+      { label: "60-79%", min: 60, max: 79, value: 0 },
+      { label: "80-100%", min: 80, max: 100, value: 0 }
+    ];
 
-        if (resourcesRes.status === "fulfilled") {
-          setResources(Array.isArray(resourcesRes.value.data) ? resourcesRes.value.data : []);
-        } else {
-          setSectionErrors((current) => ({
-            ...current,
-            resources: resourcesRes.reason?.response?.data?.message || "Resources data could not be loaded."
-          }));
-        }
-
-        if (questionsRes.status === "fulfilled") {
-          setQuestions(Array.isArray(questionsRes.value.data) ? questionsRes.value.data : []);
-        } else {
-          setSectionErrors((current) => ({
-            ...current,
-            questions: questionsRes.reason?.response?.data?.message || "Questions data could not be loaded."
-          }));
-        }
-
-        if (examsRes.status === "fulfilled") {
-          setExams(Array.isArray(examsRes.value.data) ? examsRes.value.data : []);
-        } else {
-          setSectionErrors((current) => ({
-            ...current,
-            exams: examsRes.reason?.response?.data?.message || "Exams data could not be loaded."
-          }));
-        }
-      } finally {
-        setLoading(false);
+    users.forEach((entry) => {
+      const raw = Number(String(entry.progress || "0").replace("%", ""));
+      const score = Number.isFinite(raw) ? raw : 0;
+      const bucket = ranges.find((item) => score >= item.min && score <= item.max);
+      if (bucket) {
+        bucket.value += 1;
       }
-    };
+    });
 
-    loadData();
+    return ranges;
+  }, [users]);
+
+  const coursePerformanceData = useMemo(() => {
+    const weakTopics = Array.isArray(overview?.weakTopics) ? overview.weakTopics : [];
+
+    if (weakTopics.length > 0) {
+      return weakTopics.slice(0, 6).map((item) => ({
+        course: item.subject,
+        score: Math.max(0, Math.min(100, Math.round(((Number(item.averageScore) || 0) / 5) * 100))),
+        attempts: Number(item.attempts) || 0
+      }));
+    }
+
+    return managedCourses.slice(0, 6).map((course) => ({
+      course: course.name,
+      score: 0,
+      attempts: course.questions
+    }));
+  }, [managedCourses, overview]);
+
+  const activityTrendData = useMemo(() => {
+    const months = [];
+    const now = new Date();
+
+    for (let index = 5; index >= 0; index -= 1) {
+      const monthDate = new Date(now.getFullYear(), now.getMonth() - index, 1);
+      months.push({
+        key: `${monthDate.getFullYear()}-${monthDate.getMonth() + 1}`,
+        label: monthDate.toLocaleDateString(undefined, { month: "short" }),
+        signups: 0,
+        activeUsers: 0
+      });
+    }
+
+    users.forEach((entry) => {
+      if (entry.createdAt) {
+        const created = new Date(entry.createdAt);
+        const key = `${created.getFullYear()}-${created.getMonth() + 1}`;
+        const match = months.find((item) => item.key === key);
+        if (match) {
+          match.signups += 1;
+        }
+      }
+
+      if (entry.lastActivity) {
+        const lastActivity = new Date(entry.lastActivity);
+        const key = `${lastActivity.getFullYear()}-${lastActivity.getMonth() + 1}`;
+        const match = months.find((item) => item.key === key);
+        if (match) {
+          match.activeUsers += 1;
+        }
+      }
+    });
+
+    return months;
+  }, [users]);
+
+  const loadData = useCallback(async ({ showLoader = true } = {}) => {
+    if (showLoader) {
+      setLoading(true);
+    }
+
+    setError("");
+    setSectionErrors({ users: "", resources: "", questions: "", exams: "", analytics: "" });
+
+    try {
+      const [overviewRes, usersRes, resourcesRes, questionsRes, examsRes] = await Promise.allSettled([
+        api.get("/admin/overview"),
+        api.get("/admin/users"),
+        api.get("/resources"),
+        api.get("/questions"),
+        api.get("/exams")
+      ]);
+
+      if (overviewRes.status === "fulfilled") {
+        setOverview(overviewRes.value.data || null);
+      } else {
+        setSectionErrors((current) => ({
+          ...current,
+          analytics: overviewRes.reason?.response?.data?.message || "Analytics data could not be loaded."
+        }));
+      }
+
+      if (usersRes.status === "fulfilled") {
+        setUsers(Array.isArray(usersRes.value.data) ? usersRes.value.data : []);
+      } else {
+        setSectionErrors((current) => ({
+          ...current,
+          users: usersRes.reason?.response?.data?.message || "Users data could not be loaded."
+        }));
+      }
+
+      if (resourcesRes.status === "fulfilled") {
+        setResources(Array.isArray(resourcesRes.value.data) ? resourcesRes.value.data : []);
+      } else {
+        setSectionErrors((current) => ({
+          ...current,
+          resources: resourcesRes.reason?.response?.data?.message || "Resources data could not be loaded."
+        }));
+      }
+
+      if (questionsRes.status === "fulfilled") {
+        setQuestions(Array.isArray(questionsRes.value.data) ? questionsRes.value.data : []);
+      } else {
+        setSectionErrors((current) => ({
+          ...current,
+          questions: questionsRes.reason?.response?.data?.message || "Questions data could not be loaded."
+        }));
+      }
+
+      if (examsRes.status === "fulfilled") {
+        setExams(Array.isArray(examsRes.value.data) ? examsRes.value.data : []);
+      } else {
+        setSectionErrors((current) => ({
+          ...current,
+          exams: examsRes.reason?.response?.data?.message || "Exams data could not be loaded."
+        }));
+      }
+
+      setLastUpdatedAt(new Date());
+    } finally {
+      setLoading(false);
+      setIsRefreshing(false);
+    }
   }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      loadData({ showLoader: false });
+    }, 45000);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [loadData]);
+
+  const refreshDashboard = async () => {
+    setIsRefreshing(true);
+    await loadData({ showLoader: false });
+  };
 
   const updateUploadField = (field, value) => {
     setUploadForm((current) => ({ ...current, [field]: value }));
@@ -416,6 +574,33 @@ function AdminPanelPage() {
       setUsers((current) => current.filter((item) => item.id !== userId));
     } catch (err) {
       setStatus(err.response?.data?.message || "Could not delete user.");
+    }
+  };
+
+  const removeQuestion = async (questionId) => {
+    const confirmed = window.confirm("Delete this question? This action cannot be undone.");
+    if (!confirmed) return;
+
+    try {
+      await api.delete(`/questions/${questionId}`);
+      setQuestions((current) => current.filter((item) => (item._id || item.id) !== questionId));
+      setQuestionUploadState("Question deleted successfully.");
+    } catch (err) {
+      setQuestionUploadState(err.response?.data?.message || "Could not delete question.");
+    }
+  };
+
+  const removeCourse = async (courseName) => {
+    const confirmed = window.confirm(`Delete course \"${courseName}\" and all related resources/questions?`);
+    if (!confirmed) return;
+
+    try {
+      await api.delete(`/resources/course/${encodeURIComponent(courseName)}`);
+      setResources((current) => current.filter((item) => (item.course || "").trim() !== courseName));
+      setQuestions((current) => current.filter((item) => (item.subject || "").trim() !== courseName));
+      setQuestionUploadState(`Course \"${courseName}\" deleted.`);
+    } catch (err) {
+      setQuestionUploadState(err.response?.data?.message || "Could not delete course.");
     }
   };
 
@@ -742,6 +927,80 @@ function AdminPanelPage() {
               ))}
             </div>
           </div>
+
+          <div className="mt-6 space-y-3">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className={`text-xs font-semibold uppercase tracking-[0.22em] ${palette.muted}`}>Question bank</p>
+                <p className={`mt-1 text-sm ${palette.text}`}>Delete individual questions directly from here.</p>
+              </div>
+              <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${palette.badgeSoft}`}>{questions.length} questions</span>
+            </div>
+
+            <div className="space-y-3">
+              {!questions.length ? (
+                <p className={`rounded-xl border px-3 py-2 text-sm ${palette.softCardAlt} ${palette.text}`}>No questions available yet.</p>
+              ) : null}
+              {questions.slice(0, 25).map((question) => {
+                const questionId = question._id || question.id;
+
+                return (
+                  <article key={questionId} className={`rounded-2xl border p-4 ${palette.softCardAlt}`}>
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className={`text-xs font-semibold uppercase tracking-[0.18em] ${palette.muted}`}>{question.subject || "Course"}</p>
+                        <p className={`mt-2 text-sm font-semibold ${palette.heading}`}>{question.questionText}</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeQuestion(questionId)}
+                        className={`rounded-lg border p-2 ${palette.control}`}
+                        title="Delete question"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="mt-6 space-y-3">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className={`text-xs font-semibold uppercase tracking-[0.22em] ${palette.muted}`}>Courses</p>
+                <p className={`mt-1 text-sm ${palette.text}`}>Delete a course and all related resources/questions.</p>
+              </div>
+              <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${palette.badgeSoft}`}>{managedCourses.length} courses</span>
+            </div>
+
+            <div className="space-y-3">
+              {!managedCourses.length ? (
+                <p className={`rounded-xl border px-3 py-2 text-sm ${palette.softCardAlt} ${palette.text}`}>No courses available yet.</p>
+              ) : null}
+              {managedCourses.map((course) => (
+                <article key={course.name} className={`rounded-2xl border p-4 ${palette.softCardAlt}`}>
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className={`font-semibold ${palette.heading}`}>{course.name}</p>
+                      <p className={`mt-1 text-xs ${palette.muted}`}>
+                        {course.resources} resources • {course.questions} questions
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeCourse(course.name)}
+                      className={`rounded-lg border p-2 ${palette.control}`}
+                      title="Delete course"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </div>
         </section>
       );
     }
@@ -754,7 +1013,36 @@ function AdminPanelPage() {
               <p className={`text-xs font-semibold uppercase tracking-[0.22em] ${palette.muted}`}>Dashboard & Analytics</p>
               <h3 className={`mt-2 text-[clamp(1.1rem,1.6vw,1.35rem)] font-bold ${palette.heading}`}>Usage trends and weak topics</h3>
             </div>
-            <BarChart3 size={18} className={palette.accent} />
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={refreshDashboard}
+                className={`inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 text-xs font-semibold ${palette.control}`}
+              >
+                <RefreshCcw size={13} className={isRefreshing ? "animate-spin" : ""} />
+                {isRefreshing ? "Refreshing..." : "Refresh now"}
+              </button>
+              <BarChart3 size={18} className={palette.accent} />
+            </div>
+          </div>
+
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${palette.badgeSoft}`}>
+              Updated {lastUpdatedAt ? lastUpdatedAt.toLocaleTimeString() : "just now"}
+            </span>
+            <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${palette.badgeAccent}`}>
+              Auto-refresh every 45s
+            </span>
+          </div>
+
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            {analyticsItems.map((item) => (
+              <article key={item.label} className={`rounded-2xl border p-4 ${palette.statBg} ${palette.border}`}>
+                <p className={`text-[11px] font-semibold uppercase tracking-[0.18em] ${palette.statLabel}`}>{item.label}</p>
+                <p className={`mt-2 text-2xl font-bold ${palette.statValue}`}>{item.value}</p>
+                <p className={`mt-1 text-xs font-semibold ${palette.accent}`}>{item.delta}</p>
+              </article>
+            ))}
           </div>
 
           <div className="mt-4 space-y-3">
@@ -772,6 +1060,86 @@ function AdminPanelPage() {
                 <p className={`text-sm font-semibold ${palette.text}`}>{item}</p>
               </div>
             ))}
+          </div>
+
+          <div className="mt-6 grid gap-5 xl:grid-cols-2">
+            <article className={`rounded-2xl border p-4 ${palette.softCardAlt}`}>
+              <div className="mb-3 flex items-center justify-between gap-2">
+                <p className={`text-sm font-semibold ${palette.heading}`}>User Status Distribution</p>
+                <span className={`text-xs ${palette.muted}`}>Pie chart</span>
+              </div>
+              <div className="h-[280px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie data={userStatusPieData} dataKey="value" nameKey="name" innerRadius={62} outerRadius={94} paddingAngle={2}>
+                      {userStatusPieData.map((item, index) => (
+                        <Cell key={item.name} fill={chartColors[index % chartColors.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </article>
+
+            <article className={`rounded-2xl border p-4 ${palette.softCardAlt}`}>
+              <div className="mb-3 flex items-center justify-between gap-2">
+                <p className={`text-sm font-semibold ${palette.heading}`}>Quiz Result Bands</p>
+                <span className={`text-xs ${palette.muted}`}>Bar graph</span>
+              </div>
+              <div className="h-[280px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={quizResultBandsData} margin={{ top: 8, right: 8, left: 0, bottom: 6 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
+                    <XAxis dataKey="label" tickLine={false} axisLine={false} />
+                    <YAxis allowDecimals={false} tickLine={false} axisLine={false} />
+                    <Tooltip />
+                    <Bar dataKey="value" name="Users" radius={[8, 8, 0, 0]} fill={chartColors[0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </article>
+
+            <article className={`rounded-2xl border p-4 ${palette.softCardAlt}`}>
+              <div className="mb-3 flex items-center justify-between gap-2">
+                <p className={`text-sm font-semibold ${palette.heading}`}>Course Performance Snapshot</p>
+                <span className={`text-xs ${palette.muted}`}>Bar graph</span>
+              </div>
+              <div className="h-[300px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={coursePerformanceData} margin={{ top: 8, right: 8, left: 0, bottom: 20 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
+                    <XAxis dataKey="course" angle={-20} textAnchor="end" interval={0} height={55} tickLine={false} axisLine={false} />
+                    <YAxis tickLine={false} axisLine={false} />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="score" name="Avg score (%)" radius={[8, 8, 0, 0]} fill={chartColors[2]} />
+                    <Bar dataKey="attempts" name="Attempts" radius={[8, 8, 0, 0]} fill={chartColors[1]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </article>
+
+            <article className={`rounded-2xl border p-4 ${palette.softCardAlt}`}>
+              <div className="mb-3 flex items-center justify-between gap-2">
+                <p className={`text-sm font-semibold ${palette.heading}`}>Activity Trend (6 Months)</p>
+                <span className={`text-xs ${palette.muted}`}>Line chart</span>
+              </div>
+              <div className="h-[300px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={activityTrendData} margin={{ top: 8, right: 8, left: 0, bottom: 6 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
+                    <XAxis dataKey="label" tickLine={false} axisLine={false} />
+                    <YAxis allowDecimals={false} tickLine={false} axisLine={false} />
+                    <Tooltip />
+                    <Legend />
+                    <Line type="monotone" dataKey="signups" name="New signups" stroke={chartColors[5]} strokeWidth={2.2} dot={{ r: 3 }} />
+                    <Line type="monotone" dataKey="activeUsers" name="Users active" stroke={chartColors[3]} strokeWidth={2.2} dot={{ r: 3 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </article>
           </div>
         </section>
       );

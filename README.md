@@ -311,12 +311,12 @@ Example output:
 |------|----------|
 | Route | `POST /api/ai/dashboard` |
 | Controller | Computes subject scores and weak subjects |
-| Service | Calls Hugging Face when configured |
+| Service | Calls shared AI provider (`gemini`, `openai`, or `ollama`) |
 | Persistence | Stores response in the analytics collection and returns it to the client |
 
 ### Fallback behavior
 
-If `HUGGING_FACE_API_KEY` is missing or the model call fails, the backend returns a **local, deterministic** recommendation so students still receive actionable AI Coach output without depending on an external API.
+If no AI provider key is configured or the provider call fails, the backend returns a **local fallback** recommendation so students still receive actionable output.
 
 ---
 
@@ -388,7 +388,14 @@ Creates a 7-day study plan from weekly hours, exam date, weak topics, and study-
 |----------|----------|--------|
 | `MONGODB_URI` | Yes | Database connection |
 | `JWT_SECRET` | Yes | Signing key for tokens |
-| `AI_PROVIDER` | No | `ollama` (default) or `openai` |
+| `AI_PROVIDER` | No | `gemini`, `openai`, or `ollama` (auto-selects `gemini` if `GEMINI_API_KEY` is set) |
+| `AI_SECONDARY_PROVIDER` | No | Optional fallback provider (`huggingface`, `openai`, or `ollama`) used on quota/rate-limit errors |
+| `AI_FALLBACK_ON_ANY_ERROR` | No | `true` enables secondary fallback for all provider errors; default falls back only for quota/rate-limit |
+| `GEMINI_API_KEY` | No | Required when `AI_PROVIDER=gemini` |
+| `GOOGLE_API_KEY` | No | Alias for `GEMINI_API_KEY` |
+| `GEMINI_MODEL` | No | Default: `gemini-2.0-flash` |
+| `GEMINI_BASE_URL` | No | Default: `https://generativelanguage.googleapis.com` |
+| `AI_REQUIRE_PROVIDER` | No | `true` disables local deterministic fallback and returns provider errors instead |
 | `OLLAMA_BASE_URL` | No | Default: `http://localhost:11434` |
 | `OLLAMA_MODEL` | No | Default: `llama3.1` |
 | `OPENAI_API_KEY` | No | Required when `AI_PROVIDER=openai` |
@@ -438,7 +445,7 @@ npm run dev
 |---------|----------------|
 | **AI Coach not visible** | Use **Workspace → Insights**; refresh the client after pull or build changes. |
 | **Request fails** | Confirm `VITE_API_URL` points at the backend; ensure JWT/session is valid; inspect backend logs for `/api/ai/dashboard` errors. |
-| **Generic recommendation** | Expected when `HUGGING_FACE_API_KEY` is unset. Set the key for model-generated text. |
+| **Generic recommendation** | Happens when provider keys are missing or provider call fails. Set `GEMINI_API_KEY` and `AI_PROVIDER=gemini` for real model-generated text. |
 
 ---
 

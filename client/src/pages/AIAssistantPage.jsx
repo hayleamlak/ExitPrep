@@ -93,6 +93,9 @@ function AIAssistantPage() {
   const [summary, setSummary] = useState(null);
   const [quizQuestions, setQuizQuestions] = useState([]);
   const [weeklyPlan, setWeeklyPlan] = useState(null);
+  const [summaryMeta, setSummaryMeta] = useState(null);
+  const [quizMeta, setQuizMeta] = useState(null);
+  const [planMeta, setPlanMeta] = useState(null);
   const [activeOutput, setActiveOutput] = useState("");
   const [expandedPlanDay, setExpandedPlanDay] = useState(null);
   const [quizIndex, setQuizIndex] = useState(0);
@@ -216,6 +219,7 @@ function AIAssistantPage() {
     setActiveOutput("summary");
     setError("");
     setSummary(null);
+    setSummaryMeta(null);
 
     if (sourceMode === "device" && !uploadedFile) {
       setError("Please upload a PDF file from your device.");
@@ -247,6 +251,7 @@ function AIAssistantPage() {
         subject: source.subject,
         ...response.data?.data
       });
+      setSummaryMeta(response.data?.meta || null);
     } catch (err) {
       setError(err?.response?.data?.message || err?.message || "Failed to summarize note.");
     } finally {
@@ -258,6 +263,7 @@ function AIAssistantPage() {
     setActiveOutput("quiz");
     setQuizError("");
     setQuizQuestions([]);
+    setQuizMeta(null);
     setQuizIndex(0);
     setSelectedAnswer("");
     setIsAnswered(false);
@@ -296,6 +302,7 @@ function AIAssistantPage() {
       }
 
       setQuizQuestions(questions);
+      setQuizMeta(response.data?.meta || null);
     } catch (err) {
       setQuizError(err?.response?.data?.message || err?.message || "Failed to generate quiz.");
     } finally {
@@ -307,6 +314,7 @@ function AIAssistantPage() {
     setActiveOutput("plan");
     setPlanError("");
     setWeeklyPlan(null);
+    setPlanMeta(null);
 
     if (sourceMode === "device" && !uploadedFile) {
       setPlanError("Please upload a PDF file from your device.");
@@ -348,6 +356,7 @@ function AIAssistantPage() {
         subject: source.subject,
         ...planData
       });
+      setPlanMeta(response.data?.meta || null);
       setExpandedPlanDay(null);
     } catch (err) {
       setPlanError(err?.response?.data?.message || err?.message || "Failed to generate weekly plan.");
@@ -495,6 +504,11 @@ function AIAssistantPage() {
         <article className={`rounded-[26px] border p-5 sm:p-6 ${palette.card} ${palette.border}`}>
           <p className={`text-xs font-semibold uppercase tracking-[0.24em] ${palette.meta}`}>Summary Output</p>
           <p className={`mt-1 text-xs ${palette.meta}`}>{summary.sourceLabel}</p>
+          {summaryMeta?.provider ? (
+            <p className={`mt-1 text-xs ${palette.meta}`}>
+              Powered by {summaryMeta.provider}{summaryMeta.model ? ` (${summaryMeta.model})` : ""}
+            </p>
+          ) : null}
           <h2 className={`mt-2 typo-section-title ${palette.title}`}>{summary.subject}</h2>
 
           <section className="mt-4 space-y-4">
@@ -577,6 +591,11 @@ function AIAssistantPage() {
         <article className={`rounded-[26px] border p-5 sm:p-6 ${palette.card} ${palette.border}`}>
           <p className={`text-xs font-semibold uppercase tracking-[0.24em] ${palette.meta}`}>Weekly Plan</p>
           <p className={`mt-1 text-xs ${palette.meta}`}>{weeklyPlan.sourceLabel}</p>
+          {planMeta?.provider ? (
+            <p className={`mt-1 text-xs ${palette.meta}`}>
+              Powered by {planMeta.provider}{planMeta.model ? ` (${planMeta.model})` : ""}
+            </p>
+          ) : null}
           <h2 className={`mt-2 typo-section-title ${palette.title}`}>{weeklyPlan.subject}</h2>
           <p className={`mt-3 typo-body-relaxed ${palette.page}`}>{weeklyPlan.explanation || "No plan explanation available."}</p>
 
@@ -641,6 +660,11 @@ function AIAssistantPage() {
         <article className={`rounded-[26px] border p-5 sm:p-6 ${palette.card} ${palette.border}`}>
           <p className={`text-xs font-semibold uppercase tracking-[0.24em] ${palette.meta}`}>Quiz</p>
           <p className={`mt-1 text-xs ${palette.meta}`}>Question {quizIndex + 1} of {quizQuestions.length}</p>
+          {quizMeta?.provider ? (
+            <p className={`mt-1 text-xs ${palette.meta}`}>
+              Powered by {quizMeta.provider}{quizMeta.model ? ` (${quizMeta.model})` : ""}
+            </p>
+          ) : null}
           <h2 className={`mt-3 typo-section-title ${palette.title}`}>{currentQuestion.questionText}</h2>
 
           <div className="mt-4 space-y-2">

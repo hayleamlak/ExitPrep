@@ -1,5 +1,6 @@
 const Resource = require("../models/Resource");
 const Note = require("../models/Note");
+const Question = require("../models/Question");
 const { callAI } = require("../services/aiProvider");
 
 async function generateCourseNote(resource) {
@@ -184,8 +185,36 @@ async function trackDownload(req, res) {
   }
 }
 
+async function deleteCourse(req, res) {
+  try {
+    const rawCourse = typeof req.params.courseName === "string" ? req.params.courseName.trim() : "";
+    if (!rawCourse) {
+      return res.status(400).json({ message: "Course name is required" });
+    }
+
+    const resources = await Resource.find({ course: rawCourse }).select("_id");
+
+    if (!resources.length) {
+      return res.status(404).json({ message: "Course not found" });
+    }
+
+    const resourceIds = resources.map((resource) => resource._id);
+
+    await Promise.all([
+      Resource.deleteMany({ _id: { $in: resourceIds } }),
+      Note.deleteMany({ $or: [{ course: rawCourse }, { resourceId: { $in: resourceIds } }] }),
+      Question.deleteMany({ subject: rawCourse })
+    ]);
+
+    return res.json({ message: "Course deleted" });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+}
+
 module.exports = {
   listResources,
   createResource,
-  trackDownload
+  trackDownload,
+  deleteCourse
 };

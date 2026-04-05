@@ -42,7 +42,11 @@ function extractJsonObject(text) {
 async function callAIWithFallback(options) {
   try {
     return await callAI(options);
-  } catch (_error) {
+  } catch (error) {
+    if (String(process.env.AI_REQUIRE_PROVIDER || "").toLowerCase() === "true") {
+      throw error;
+    }
+
     return {
       text: "",
       meta: {

@@ -150,8 +150,24 @@ async function bulkCreateQuestions(req, res) {
   }
 }
 
+async function deleteQuestion(req, res) {
+  try {
+    const { id } = req.params;
+    const deleted = await Question.findByIdAndDelete(id);
+
+    if (!deleted) {
+      return res.status(404).json({ message: "Question not found" });
+    }
+
+    return res.json({ message: "Question deleted" });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+}
+
 module.exports = {
   listQuestions,
   createQuestion,
-  bulkCreateQuestions
+  bulkCreateQuestions,
+  deleteQuestion
 };

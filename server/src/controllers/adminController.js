@@ -77,7 +77,8 @@ async function listUsers(_req, res) {
         status: user.isSuspended ? "Suspended" : "Active",
         progress: `${average}%`,
         activityCount: totalCount,
-        lastActivity
+        lastActivity,
+        createdAt: user.createdAt
       };
     });
 

@@ -5,7 +5,7 @@ const { v2: cloudinary } = require("cloudinary");
 
 const auth = require("../middleware/auth");
 const allowRoles = require("../middleware/roles");
-const { listResources, createResource, trackDownload } = require("../controllers/resourceController");
+const { listResources, createResource, trackDownload, deleteCourse } = require("../controllers/resourceController");
 
 const cloudinaryConfig = {
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -49,6 +49,7 @@ const router = express.Router();
 
 router.get("/", listResources);
 router.post("/:id/download", trackDownload);
+router.delete("/course/:courseName", auth, allowRoles("admin"), deleteCourse);
 router.post("/", auth, allowRoles("admin"), (req, res, next) => {
   if (!isCloudinaryConfigured) {
     res.status(500).json({

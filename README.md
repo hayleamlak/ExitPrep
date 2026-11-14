@@ -6,7 +6,7 @@ This document covers the **AI Coach** feature: behavior, usage, architecture, co
 
 ---
 
-
+l
 ## Table of contents
 
 | Section | Description |

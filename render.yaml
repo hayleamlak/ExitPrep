@@ -8,6 +8,7 @@ services:
     startCommand: npm start
     healthCheckPath: /api/health
     envVars:
+
       - key: NODE_VERSION
         value: 20
       - key: MONGODB_URI

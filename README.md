@@ -3,7 +3,6 @@
 **AI-powered study planning** for Ethiopian university exit exam preparation.
 
 This document covers the **AI Coach** feature: behavior, usage, architecture, configuration, and troubleshooting.
-
 l
 ## Table of contents
 

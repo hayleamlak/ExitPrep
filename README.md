@@ -5,7 +5,6 @@
 This document covers the **AI Coach** feature: behavior, usage, architecture, configuration, and troubleshooting.
 l
 ## Table of contents
-
 | Section | Description |
 |--------|-------------|
 | [Features](#features) | What the AI Coach does |

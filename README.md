@@ -1,7 +1,7 @@
 # ExitPrep AI Coach
 **AI-powered study planning** for Ethiopian university exit exam preparation.
 * feature: behavior, usage, architecture, configuration, and troubleshooting.
-
+l
 l
 ## Table of contents
 | Section | Description |

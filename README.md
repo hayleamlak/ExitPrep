@@ -101,7 +101,6 @@ Frontend:
 ### 5. Implement answer explanations for students
 
 Backend:
-
 1. Endpoint receives question, selectedAnswer, correctAnswer, and topic.
 2. AI returns: why selected answer is wrong or right, why correct answer is correct, and one memory tip.
 3. Keep responses short and supportive.

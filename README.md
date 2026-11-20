@@ -30,7 +30,7 @@ l
 
 ---
 
-## AI Implementation Plan (ExitPrep Ethiopia)
+ AI Implementation Plan (ExitPrep Ethiopia)
 
 Goal: make AI features easy for students, predictable for developers, and safe to run in production.
 

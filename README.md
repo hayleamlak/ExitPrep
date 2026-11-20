@@ -78,7 +78,6 @@ Backend:
 4. Store summary with userId, subject, source file, and createdAt.
 
 Frontend:
-
 1. Add Summarize with AI button in Study Notes.
 2. Show result in three tabs: Short Summary, Key Points, and Exam Tips.
 3. Add Copy Summary button for quick reuse.

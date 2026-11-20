@@ -164,7 +164,7 @@ Standard response shape:
 }
 ```
 
-### 9. End-to-end student user flow
+9. End-to-end student user flow
 
 1. Student uploads a PDF in Notes and taps Summarize with AI.
 2. Student reviews summary and key points.
